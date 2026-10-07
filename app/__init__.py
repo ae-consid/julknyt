@@ -11,9 +11,9 @@ csrf = CSRFProtect()
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-change-me"),
+        SECRET_KEY=os.environ.get("JULKNYT_SECRET_KEY", "dev-only-change-me"),
         SQLALCHEMY_DATABASE_URI=os.environ.get(
-            "DATABASE_URL", f"sqlite:///{os.path.join(app.instance_path, 'potluck.db')}"
+            "JULKNYT_DATABASE_URL", f"sqlite:///{os.path.join(app.instance_path, 'potluck.db')}"
         ),
         # Let WTForms use its own bundled catalogs (see BaseForm.Meta.locales in forms.py)
         WTF_I18N_ENABLED=False,

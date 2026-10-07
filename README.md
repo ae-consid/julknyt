@@ -46,8 +46,8 @@ The app reads two environment variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SECRET_KEY` | an insecure development value | Signs sessions and CSRF tokens. **Set a random value anywhere other than your own machine.** |
-| `DATABASE_URL` | `sqlite:///instance/potluck.db` | Database connection string |
+| `JULKNYT_SECRET_KEY` | an insecure development value | Signs sessions and CSRF tokens. **Set a random value anywhere other than your own machine.** |
+| `JULKNYT_DATABASE_URL` | `sqlite:///instance/potluck.db` | Database connection string |
 
 Generate a key:
 
@@ -58,11 +58,11 @@ python -c "import secrets; print(secrets.token_hex(32))"
 Set it for the current terminal session:
 
 ```powershell
-$env:SECRET_KEY = "paste-the-generated-key-here"
+$env:JULKNYT_SECRET_KEY = "paste-the-generated-key-here"
 ```
 
 ```bash
-export SECRET_KEY="paste-the-generated-key-here"
+export JULKNYT_SECRET_KEY="paste-the-generated-key-here"
 ```
 
 ### 4. Database
@@ -86,7 +86,7 @@ Open <http://127.0.0.1:5000>. Stop the server with `Ctrl+C`. If port 5000 is alr
 The user interface is in Swedish.
 
 ### Running in production (Linux / Raspberry Pi)
-Use gunicorn (already in `requirements.txt`) instead of the development server, and set `SECRET_KEY` first:
+Use gunicorn (already in `requirements.txt`) instead of the development server, and set `JULKNYT_SECRET_KEY` first:
 
 ```bash
 gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app

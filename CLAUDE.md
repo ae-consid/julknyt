@@ -29,7 +29,7 @@ Keep it simple. This is a small app for a handful of people, not a platform.
 - **Scope everything to an event.** Every dish lookup must verify it belongs to the event identified by the URL token (see `_get_dish`). Never fetch a dish by id alone.
 - **Validate at the boundary.** Use WTForms for user input, and keep length limits in sync with the model columns.
 - **Keep CSRF on.** Every POST form needs the token, including HTMX forms. Don't exempt routes from `CSRFProtect`.
-- **Config via environment.** `SECRET_KEY` and `DATABASE_URL` come from env vars; no secrets in code.
+- **Config via environment.** `JULKNYT_SECRET_KEY` and `JULKNYT_DATABASE_URL` come from env vars; no secrets in code.
 - **Small, reversible steps.** Prefer boring, minimal solutions over new abstractions. If the schema needs to change, introduce Flask-Migrate first instead of editing the models and hoping `create_all()` copes.
 - **Test behavior.** Add a pytest test for each new route or rule. Tests use an in-memory SQLite DB with CSRF disabled (see `tests/test_app.py`).
 
