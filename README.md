@@ -87,7 +87,7 @@ Open <http://127.0.0.1:5000>. Stop the server with `Ctrl+C`. If port 5000 is alr
 
 The user interface is in Swedish.
 
-### Running in production (Linux / Raspberry Pi)
+### Running in production (Linux)
 Use gunicorn (already in `requirements.txt`) instead of the development server, and set `JULKNYT_SECRET_KEY` first:
 
 ```bash
@@ -96,7 +96,6 @@ gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app
 
 - Put a reverse proxy such as nginx in front of it, or run it as a `systemd` service so it restarts on boot.
 - Gunicorn does not run on native Windows. Use the development server there, or WSL or Docker.
-- If the Pi also runs Pi-hole, give this app a port that Pi-hole does not use (Pi-hole's web interface uses port 80).
 - To let guests reach the app from outside your network, use a tunnel such as Cloudflare Tunnel or Tailscale instead of opening router ports.
 
 ## Test
