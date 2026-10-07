@@ -1,5 +1,7 @@
 <!doctype html>
-<html lang="en" data-event-theme="{{ theme|default('classic') }}"{% if theme == 'christmas' %} data-theme="light"{% endif %}>
+{%- set theme = theme|default('classic') -%}
+{%- set pico_modes = {'christmas': 'light', 'halloween': 'dark'} -%}
+<html lang="en" data-event-theme="{{ theme }}"{% if theme in pico_modes %} data-theme="{{ pico_modes[theme] }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,14 +13,15 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
   <header class="site-header">
     <nav class="container">
-      <ul><li><a href="{{ url_for('main.index') }}"><strong>🎄 Julknyt</strong></a></li></ul>
+      <ul><li><a href="{{ url_for('main.index') }}"><strong><span class="brand-tree">🎄</span><span class="brand-pumpkin">🎃</span> Julknyt</strong></a></li></ul>
     </nav>
   </header>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">
-    <p>🎁 God Jul &amp; Merry Christmas! ❄️</p>
+    <p class="footer-christmas">🎁 God Jul &amp; Merry Christmas! ❄️</p>
+    <p class="footer-halloween">🦇 Happy Halloween! 🎃 Boo! 👻</p>
   </footer>
 </body>
 </html>

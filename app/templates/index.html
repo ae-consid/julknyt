@@ -15,8 +15,9 @@
   // Live preview of the chosen theme; the server applies it for real once the event exists.
   document.getElementById("theme").addEventListener("change", function () {
     var html = document.documentElement;
+    var picoModes = { christmas: "light", halloween: "dark" };  // keep in sync with base.html
     html.dataset.eventTheme = this.value;
-    if (this.value === "christmas") html.dataset.theme = "light";
+    if (picoModes[this.value]) html.dataset.theme = picoModes[this.value];
     else delete html.dataset.theme;
   });
 </script>

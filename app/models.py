@@ -3,7 +3,11 @@ import secrets
 from . import db
 
 CATEGORIES = ["Starter", "Main", "Side", "Dessert", "Drink", "Other"]
-THEMES = [("classic", "Classic"), ("christmas", "Christmas 🎄")]
+THEMES = [
+    ("classic", "Classic"),
+    ("christmas", "Christmas 🎄"),
+    ("halloween", "Halloween 🎃"),
+]
 DEFAULT_THEME = "classic"
 
 

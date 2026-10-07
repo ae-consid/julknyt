@@ -107,8 +107,16 @@ def test_invalid_theme_rejected(client):
             "title": "Julbord",
             "date": "2026-12-24",
             "host_name": "Anton",
-            "theme": "halloween",
+            "theme": "easter",
         },
     )
     assert resp.status_code == 200
     assert Event.query.count() == 0
+
+
+def test_halloween_theme_is_saved_and_applied(client):
+    token = make_event(client, theme="halloween")
+    assert Event.query.filter_by(token=token).one().theme == "halloween"
+    page = client.get(f"/e/{token}").data
+    assert b'data-event-theme="halloween"' in page
+    assert b'data-theme="dark"' in page
