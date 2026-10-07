@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Plan your Christmas potluck</h1>
+<p>Create an event, share the link, and let everyone sign up for dishes.</p>
+<form method="post">
+  {{ form.hidden_tag() }}
+  {% for field in [form.title, form.date, form.location, form.host_name] %}
+    <label>{{ field.label.text }} {{ field() }}
+      {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
+    </label>
+  {% endfor %}
+  <button type="submit">Create event</button>
+</form>
+{% endblock %}

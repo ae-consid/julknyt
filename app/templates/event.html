@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>{{ event.title }}</h1>
+  <p>{{ event.date.strftime("%A %d %B %Y") }}{% if event.location %} · {{ event.location }}{% endif %} · hosted by {{ event.host_name }}</p>
+</hgroup>
+<p><small>Share this page's link with your guests.</small></p>
+
+<section id="dishes">{% include "_dishes.html" %}</section>
+
+<article>
+  <header>Add a dish</header>
+  <form method="post" action="{{ url_for('main.add_dish', token=event.token) }}"
+        hx-post="{{ url_for('main.add_dish', token=event.token) }}"
+        hx-target="#dishes" hx-on::after-request="if(event.detail.successful) this.reset()">
+    {{ form.hidden_tag() }}
+    {% for field in [form.name, form.category, form.dietary, form.claimed_by] %}
+      <label>{{ field.label.text }} {{ field() }}</label>
+    {% endfor %}
+    <button type="submit">Add</button>
+  </form>
+</article>
+{% endblock %}

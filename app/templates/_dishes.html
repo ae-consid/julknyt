@@ -1,0 +1,49 @@
+{% for category in categories %}
+  {% set dishes = event.dishes | selectattr("category", "equalto", category) | list %}
+  {% if dishes %}
+    <h3>{{ category }}</h3>
+    <table>
+      <tbody>
+      {% for dish in dishes %}
+        <tr>
+          <td>
+            {{ dish.name }}
+            {% if dish.dietary %}<small>({{ dish.dietary }})</small>{% endif %}
+          </td>
+          <td>
+            {% if dish.claimed_by %}
+              <mark>{{ dish.claimed_by }}</mark>
+              <form style="display:inline" method="post"
+                    action="{{ url_for('main.unclaim', token=event.token, dish_id=dish.id) }}"
+                    hx-post="{{ url_for('main.unclaim', token=event.token, dish_id=dish.id) }}"
+                    hx-target="#dishes">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="outline secondary" type="submit">Unclaim</button>
+              </form>
+            {% else %}
+              <form style="display:flex;gap:.5rem;margin:0" method="post"
+                    action="{{ url_for('main.claim', token=event.token, dish_id=dish.id) }}"
+                    hx-post="{{ url_for('main.claim', token=event.token, dish_id=dish.id) }}"
+                    hx-target="#dishes">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input name="name" placeholder="Your name" required>
+                <button type="submit">I'll bring it</button>
+              </form>
+            {% endif %}
+          </td>
+          <td>
+            <form style="margin:0" method="post"
+                  action="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
+                  hx-post="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
+                  hx-target="#dishes" hx-confirm="Remove this dish?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="outline contrast" type="submit" aria-label="Remove">✕</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endfor %}
+{% if not event.dishes %}<p>No dishes yet. Add the first one below!</p>{% endif %}
