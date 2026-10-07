@@ -164,3 +164,39 @@ def test_not_found_page_is_swedish(client):
     resp = client.get("/e/nope")
     assert resp.status_code == 404
     assert "Sidan hittades inte" in resp.get_data(as_text=True)
+
+
+def _app_with_env(monkeypatch, **env):
+    from app import create_app
+
+    for name in ("JULKNYT_SECRET_KEY", "SECRET_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    return create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://"})
+
+
+def test_warns_when_secret_key_not_set(monkeypatch, caplog):
+    _app_with_env(monkeypatch)
+    assert "JULKNYT_SECRET_KEY is not set" in caplog.text
+    assert "no longer read" not in caplog.text
+
+
+def test_warning_mentions_old_variable_name(monkeypatch, caplog):
+    _app_with_env(monkeypatch, SECRET_KEY="old")
+    assert "JULKNYT_SECRET_KEY is not set" in caplog.text
+    assert "rename it to JULKNYT_SECRET_KEY" in caplog.text
+
+
+def test_no_warning_when_secret_key_set(monkeypatch, caplog):
+    _app_with_env(monkeypatch, JULKNYT_SECRET_KEY="a-real-secret")
+    assert "JULKNYT_SECRET_KEY is not set" not in caplog.text
+
+
+def test_no_warning_in_debug_or_testing(monkeypatch, caplog):
+    from app import create_app
+
+    monkeypatch.delenv("JULKNYT_SECRET_KEY", raising=False)
+    create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "DEBUG": True})
+    create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "TESTING": True})
+    assert "JULKNYT_SECRET_KEY is not set" not in caplog.text

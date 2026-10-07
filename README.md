@@ -49,6 +49,8 @@ The app reads two environment variables:
 | `JULKNYT_SECRET_KEY` | an insecure development value | Signs sessions and CSRF tokens. **Set a random value anywhere other than your own machine.** |
 | `JULKNYT_DATABASE_URL` | `sqlite:///instance/potluck.db` | Database connection string |
 
+When `JULKNYT_SECRET_KEY` is missing and debug mode is off, the app logs a warning at startup. In production, check the log for it.
+
 Generate a key:
 
 ```bash
