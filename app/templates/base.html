@@ -1,7 +1,7 @@
 <!doctype html>
 {%- set theme = theme|default('classic') -%}
 {%- set pico_modes = {'christmas': 'light', 'halloween': 'dark'} -%}
-<html lang="en" data-event-theme="{{ theme }}"{% if theme in pico_modes %} data-theme="{{ pico_modes[theme] }}"{% endif %}>
+<html lang="sv" data-event-theme="{{ theme }}"{% if theme in pico_modes %} data-theme="{{ pico_modes[theme] }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,8 +20,8 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">
-    <p class="footer-christmas">🎁 God Jul &amp; Merry Christmas! ❄️</p>
-    <p class="footer-halloween">🦇 Happy Halloween! 🎃 Boo! 👻</p>
+    <p class="footer-christmas">🎁 God Jul! ❄️</p>
+    <p class="footer-halloween">🦇 Glad Halloween! 🎃 Bu! 👻</p>
   </footer>
 </body>
 </html>

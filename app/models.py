@@ -2,10 +2,19 @@ import secrets
 
 from . import db
 
+# Stored values stay English keys; the second element is the Swedish label shown in the UI.
 CATEGORIES = ["Starter", "Main", "Side", "Dessert", "Drink", "Other"]
+CATEGORY_LABELS = {
+    "Starter": "Förrätt",
+    "Main": "Huvudrätt",
+    "Side": "Tillbehör",
+    "Dessert": "Efterrätt",
+    "Drink": "Dryck",
+    "Other": "Övrigt",
+}
 THEMES = [
-    ("classic", "Classic"),
-    ("christmas", "Christmas 🎄"),
+    ("classic", "Klassisk"),
+    ("christmas", "Jul 🎄"),
     ("halloween", "Halloween 🎃"),
 ]
 DEFAULT_THEME = "classic"

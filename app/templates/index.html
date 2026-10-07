@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Plan your potluck</h1>
-<p>Create an event, share the link, and let everyone sign up for dishes.</p>
+<h1>Planera ert knytkalas</h1>
+<p>Skapa ett evenemang, dela länken och låt alla anmäla vad de tar med.</p>
 <form method="post">
   {{ form.hidden_tag() }}
   {% for field in [form.title, form.date, form.location, form.host_name, form.theme] %}
@@ -9,7 +9,7 @@
       {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
     </label>
   {% endfor %}
-  <button type="submit">Create event</button>
+  <button type="submit">Skapa evenemang</button>
 </form>
 <script>
   // Live preview of the chosen theme; the server applies it for real once the event exists.

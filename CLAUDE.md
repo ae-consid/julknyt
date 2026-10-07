@@ -3,6 +3,8 @@
 ## Project description
 Julknyt is a small web app for planning a Christmas potluck. A host creates an event and shares its link. Guests open the link, see which dishes are planned, and add, claim, unclaim or remove dishes so nobody ends up bringing the same thing. There are no user accounts: access is through an unguessable share token in the URL, and guests identify themselves by typing a name.
 
+The UI is in **Swedish only** (no language switcher). Stored values stay English keys (`Dish.category` such as `Main`, `Event.theme` such as `christmas`); Swedish labels live in `CATEGORY_LABELS` / `THEMES` in `app/models.py`. Dates use the `sv_date` filter (`app/format.py`), and WTForms validation messages are Swedish via `BaseForm.Meta.locales` in `app/forms.py`. Write new user-facing text in Swedish.
+
 Keep it simple. This is a small app for a handful of people, not a platform.
 
 ## Tech stack

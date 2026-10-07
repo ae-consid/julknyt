@@ -1,7 +1,7 @@
 {% for category in categories %}
   {% set dishes = event.dishes | selectattr("category", "equalto", category) | list %}
   {% if dishes %}
-    <h3>{{ category }}</h3>
+    <h3>{{ CATEGORY_LABELS.get(category, category) }}</h3>
     <table>
       <tbody>
       {% for dish in dishes %}
@@ -18,7 +18,7 @@
                     hx-post="{{ url_for('main.unclaim', token=event.token, dish_id=dish.id) }}"
                     hx-target="#dishes">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="outline secondary" type="submit">Unclaim</button>
+                <button class="outline secondary" type="submit">Avboka</button>
               </form>
             {% else %}
               <form style="display:flex;gap:.5rem;margin:0" method="post"
@@ -26,8 +26,8 @@
                     hx-post="{{ url_for('main.claim', token=event.token, dish_id=dish.id) }}"
                     hx-target="#dishes">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input name="name" placeholder="Your name" required>
-                <button type="submit">I'll bring it</button>
+                <input name="name" placeholder="Ditt namn" required>
+                <button type="submit">Jag tar med den</button>
               </form>
             {% endif %}
           </td>
@@ -35,9 +35,9 @@
             <form style="margin:0" method="post"
                   action="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
                   hx-post="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
-                  hx-target="#dishes" hx-confirm="Remove this dish?">
+                  hx-target="#dishes" hx-confirm="Ta bort den här rätten?">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="outline contrast" type="submit" aria-label="Remove">✕</button>
+              <button class="outline contrast" type="submit" aria-label="Ta bort">✕</button>
             </form>
           </td>
         </tr>
@@ -46,4 +46,4 @@
     </table>
   {% endif %}
 {% endfor %}
-{% if not event.dishes %}<p>No dishes yet. Add the first one below!</p>{% endif %}
+{% if not event.dishes %}<p>Inga rätter än. Lägg till den första nedan!</p>{% endif %}

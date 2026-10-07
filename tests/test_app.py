@@ -120,3 +120,47 @@ def test_halloween_theme_is_saved_and_applied(client):
     page = client.get(f"/e/{token}").data
     assert b'data-event-theme="halloween"' in page
     assert b'data-theme="dark"' in page
+
+
+def test_sv_date_filter():
+    from datetime import date
+
+    from app.format import sv_date
+
+    assert sv_date(date(2026, 12, 24)) == "torsdag 24 december 2026"
+    assert sv_date(date(2026, 10, 31)) == "lördag 31 oktober 2026"
+
+
+def test_pages_are_swedish(client):
+    home = client.get("/").get_data(as_text=True)
+    assert '<html lang="sv"' in home
+    assert "Skapa evenemang" in home
+    assert "Halloween" in home and "Klassisk" in home
+
+    token = make_event(client)
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    assert "torsdag 24 december 2026" in page
+    assert "värd: Anton" in page
+    assert "Inga rätter än" in page
+
+
+def test_category_label_is_swedish_but_stored_key_is_english(client):
+    token = make_event(client)
+    client.post(f"/e/{token}/dishes", data={"name": "Janssons", "category": "Main"})
+    assert Dish.query.one().category == "Main"
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    assert "Huvudrätt" in page
+    assert ">Main<" not in page
+
+
+def test_validation_message_is_swedish(client):
+    resp = client.post("/", data={"title": "", "date": "2026-12-24", "host_name": "Anton"})
+    assert resp.status_code == 200
+    assert "Det här fältet är obligatoriskt" in resp.get_data(as_text=True)
+    assert Event.query.count() == 0
+
+
+def test_not_found_page_is_swedish(client):
+    resp = client.get("/e/nope")
+    assert resp.status_code == 404
+    assert "Sidan hittades inte" in resp.get_data(as_text=True)
