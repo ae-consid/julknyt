@@ -3,7 +3,7 @@ import re
 import pytest
 
 from app import create_app, db
-from app.models import Dish
+from app.models import Dish, Event
 
 
 @pytest.fixture
@@ -19,16 +19,15 @@ def client():
         yield c
 
 
-def make_event(client):
-    resp = client.post(
-        "/",
-        data={
-            "title": "Julbord",
-            "date": "2026-12-24",
-            "location": "Home",
-            "host_name": "Anton",
-        },
-    )
+def make_event(client, **overrides):
+    data = {
+        "title": "Julbord",
+        "date": "2026-12-24",
+        "location": "Home",
+        "host_name": "Anton",
+    }
+    data.update(overrides)
+    resp = client.post("/", data=data)
     assert resp.status_code == 302
     return re.search(r"/e/([\w-]+)", resp.headers["Location"]).group(1)
 
@@ -85,3 +84,31 @@ def test_dish_scoped_to_event(client):
     client.post(f"/e/{t1}/dishes", data={"name": "Ham", "category": "Main"})
     dish = Dish.query.one()
     assert client.post(f"/e/{t2}/dishes/{dish.id}/delete").status_code == 404
+
+
+def test_theme_defaults_to_classic(client):
+    token = make_event(client)
+    assert Event.query.filter_by(token=token).one().theme == "classic"
+    assert b'data-event-theme="classic"' in client.get(f"/e/{token}").data
+
+
+def test_christmas_theme_is_saved_and_applied(client):
+    token = make_event(client, theme="christmas")
+    assert Event.query.filter_by(token=token).one().theme == "christmas"
+    page = client.get(f"/e/{token}").data
+    assert b'data-event-theme="christmas"' in page
+    assert b'data-theme="light"' in page
+
+
+def test_invalid_theme_rejected(client):
+    resp = client.post(
+        "/",
+        data={
+            "title": "Julbord",
+            "date": "2026-12-24",
+            "host_name": "Anton",
+            "theme": "halloween",
+        },
+    )
+    assert resp.status_code == 200
+    assert Event.query.count() == 0

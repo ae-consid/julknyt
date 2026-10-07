@@ -1,0 +1,126 @@
+/*
+ * Themes layered on top of Pico.css. The theme is set on <html data-event-theme="...">.
+ * "classic" is plain Pico (follows the system light/dark setting); every rule below is
+ * scoped to the "christmas" theme, which is always light (see data-theme in base.html).
+ */
+
+.site-footer {
+  display: none;
+}
+
+:root[data-event-theme="christmas"][data-theme="light"] {
+  --xmas-red: #b3202a;
+  --xmas-red-dark: #8f1820;
+  --xmas-green: #165b33;
+  --xmas-green-dark: #0f4226;
+  --xmas-gold: #d4a017;
+  --xmas-cream: #fffaf0;
+
+  --pico-font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --pico-background-color: var(--xmas-cream);
+  --pico-color: #2b2b2b;
+  --pico-h1-color: var(--xmas-red);
+  --pico-h2-color: var(--xmas-red);
+  --pico-h3-color: var(--xmas-green);
+  --pico-primary: var(--xmas-red);
+  --pico-primary-background: var(--xmas-red);
+  --pico-primary-hover: var(--xmas-red-dark);
+  --pico-primary-hover-background: var(--xmas-red-dark);
+  --pico-primary-underline: rgb(179 32 42 / 50%);
+  --pico-primary-focus: rgb(179 32 42 / 25%);
+  --pico-primary-inverse: #fff;
+  --pico-secondary: var(--xmas-green);
+  --pico-secondary-background: var(--xmas-green);
+  --pico-secondary-hover: var(--xmas-green-dark);
+  --pico-secondary-hover-background: var(--xmas-green-dark);
+  --pico-secondary-underline: rgb(22 91 51 / 50%);
+  --pico-secondary-focus: rgb(22 91 51 / 25%);
+  --pico-secondary-inverse: #fff;
+  --pico-contrast: #5a2a2a;
+  --pico-contrast-background: #5a2a2a;
+  --pico-contrast-hover-background: #3d1b1b;
+  --pico-card-background-color: #fff;
+  --pico-card-border-color: #ead9b8;
+  --pico-card-sectioning-background-color: #fdf3dc;
+  --pico-form-element-focus-color: var(--xmas-green);
+  --pico-mark-background-color: #d9efdf;
+  --pico-mark-color: var(--xmas-green-dark);
+}
+
+/* Soft "snowfall" speckles on the page background */
+html[data-event-theme="christmas"] body {
+  background-color: var(--xmas-cream);
+  background-image:
+    radial-gradient(circle, rgb(255 255 255 / 90%) 1.5px, transparent 2px),
+    radial-gradient(circle, rgb(200 215 230 / 45%) 1px, transparent 1.5px);
+  background-size: 90px 90px, 55px 55px;
+  background-position: 0 0, 30px 40px;
+  min-height: 100vh;
+}
+
+html[data-event-theme="christmas"] :is(h1, h2, h3) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* Header: green band, candy-cane stripe, gold trim */
+html[data-event-theme="christmas"] .site-header {
+  background: var(--xmas-green);
+  border-bottom: 3px solid var(--xmas-gold);
+  margin-bottom: 2rem;
+  position: relative;
+}
+html[data-event-theme="christmas"] .site-header::before {
+  content: "";
+  display: block;
+  height: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--xmas-red) 0 12px,
+    #fff 12px 24px
+  );
+}
+html[data-event-theme="christmas"] .site-header nav a {
+  color: #fff;
+  text-decoration: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+}
+html[data-event-theme="christmas"] .site-header nav a:hover {
+  color: var(--xmas-gold);
+}
+
+/* Cards get a festive top edge */
+html[data-event-theme="christmas"] article {
+  border-top: 4px solid var(--xmas-green);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+}
+html[data-event-theme="christmas"] article > header {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--xmas-red);
+  font-weight: bold;
+}
+
+html[data-event-theme="christmas"] table {
+  background: rgb(255 255 255 / 70%);
+  border-radius: 0.5rem;
+}
+
+html[data-event-theme="christmas"] mark {
+  border-radius: 1rem;
+  padding: 0.15rem 0.7rem;
+  font-weight: 600;
+}
+
+html[data-event-theme="christmas"] button[type="submit"]:not(.outline) {
+  border-color: var(--xmas-gold);
+}
+
+html[data-event-theme="christmas"] .site-footer {
+  display: block;
+  text-align: center;
+  color: var(--xmas-green);
+  margin: 3rem auto 2rem;
+  font-family: Georgia, "Times New Roman", serif;
+}

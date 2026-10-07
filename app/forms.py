@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import DateField, SelectField, StringField
 from wtforms.validators import DataRequired, Length, Optional
 
-from .models import CATEGORIES
+from .models import CATEGORIES, DEFAULT_THEME, THEMES
 
 
 class EventForm(FlaskForm):
@@ -10,6 +10,7 @@ class EventForm(FlaskForm):
     date = DateField("Date", validators=[DataRequired()])
     location = StringField("Location", validators=[Optional(), Length(max=200)])
     host_name = StringField("Your name", validators=[DataRequired(), Length(max=80)])
+    theme = SelectField("Theme", choices=THEMES, default=DEFAULT_THEME)
 
 
 class DishForm(FlaskForm):

@@ -31,18 +31,23 @@ def index():
             date=form.date.data,
             location=(form.location.data or "").strip(),
             host_name=form.host_name.data.strip(),
+            theme=form.theme.data,
         )
         db.session.add(event)
         db.session.commit()
         return redirect(url_for("main.event", token=event.token))
-    return render_template("index.html", form=form)
+    return render_template("index.html", form=form, theme=form.theme.data)
 
 
 @bp.get("/e/<token>")
 def event(token):
     event = _get_event(token)
     return render_template(
-        "event.html", event=event, form=DishForm(), categories=CATEGORIES
+        "event.html",
+        event=event,
+        form=DishForm(),
+        categories=CATEGORIES,
+        theme=event.theme,
     )
 
 

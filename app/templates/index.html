@@ -4,11 +4,20 @@
 <p>Create an event, share the link, and let everyone sign up for dishes.</p>
 <form method="post">
   {{ form.hidden_tag() }}
-  {% for field in [form.title, form.date, form.location, form.host_name] %}
+  {% for field in [form.title, form.date, form.location, form.host_name, form.theme] %}
     <label>{{ field.label.text }} {{ field() }}
       {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
     </label>
   {% endfor %}
   <button type="submit">Create event</button>
 </form>
+<script>
+  // Live preview of the chosen theme; the server applies it for real once the event exists.
+  document.getElementById("theme").addEventListener("change", function () {
+    var html = document.documentElement;
+    html.dataset.eventTheme = this.value;
+    if (this.value === "christmas") html.dataset.theme = "light";
+    else delete html.dataset.theme;
+  });
+</script>
 {% endblock %}

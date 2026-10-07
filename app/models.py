@@ -3,6 +3,8 @@ import secrets
 from . import db
 
 CATEGORIES = ["Starter", "Main", "Side", "Dessert", "Drink", "Other"]
+THEMES = [("classic", "Classic"), ("christmas", "Christmas 🎄")]
+DEFAULT_THEME = "classic"
 
 
 def _new_token():
@@ -16,6 +18,7 @@ class Event(db.Model):
     date = db.Column(db.Date, nullable=False)
     location = db.Column(db.String(200), default="")
     host_name = db.Column(db.String(80), nullable=False)
+    theme = db.Column(db.String(20), nullable=False, default=DEFAULT_THEME)
     dishes = db.relationship(
         "Dish", backref="event", cascade="all, delete-orphan", order_by="Dish.id"
     )
