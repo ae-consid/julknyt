@@ -1,8 +1,13 @@
 /*
  * Themes layered on top of Pico.css. The theme is set on <html data-event-theme="...">.
- * "classic" is plain Pico (follows the system light/dark setting). Every other rule is
- * scoped to one theme: "christmas" is always light, "halloween" is always dark (see
- * THEME_PICO_MODES in models.py, used by base.html and the live preview in index.html).
+ * "classic" is plain Pico (follows the system light/dark setting). "christmas" is always
+ * light and "halloween" is always dark (see THEME_PICO_MODES in models.py, used by
+ * base.html and the live preview in index.html).
+ *
+ * Each theme sets its Pico colours plus a few --theme-* variables in its own block; the
+ * "Shared theme rules" section turns those variables into the header, cards, tables and
+ * footer for every non-classic theme. To add a theme: add a block like the ones below,
+ * its body background, and its footer/brand markup in base.html.
  */
 
 /* Layout helpers for the per-dish forms in _dishes.html */
@@ -72,87 +77,21 @@ html[data-event-theme="halloween"] .site-footer .footer-halloween {
   --pico-form-element-focus-color: var(--xmas-green);
   --pico-mark-background-color: #d9efdf;
   --pico-mark-color: var(--xmas-green-dark);
-}
 
-/* Soft "snowfall" speckles on the page background */
-html[data-event-theme="christmas"] body {
-  background-color: var(--xmas-cream);
-  background-image:
-    radial-gradient(circle, rgb(255 255 255 / 90%) 1.5px, transparent 2px),
-    radial-gradient(circle, rgb(200 215 230 / 45%) 1px, transparent 1.5px);
-  background-size: 90px 90px, 55px 55px;
-  background-position: 0 0, 30px 40px;
-  min-height: 100vh;
+  /* Values for the shared theme rules below */
+  --theme-band: var(--xmas-green);
+  --theme-trim: var(--xmas-gold);
+  --theme-stripe-a: var(--xmas-red);
+  --theme-stripe-b: #fff;
+  --theme-brand: #fff;
+  --theme-brand-hover: var(--xmas-gold);
+  --theme-accent: var(--xmas-red);
+  --theme-card-edge: var(--xmas-green);
+  --theme-card-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+  --theme-table-bg: rgb(255 255 255 / 70%);
+  --theme-button-border: var(--xmas-gold);
+  --theme-footer-color: var(--xmas-green);
 }
-
-html[data-event-theme="christmas"] :is(h1, h2, h3) {
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-/* Header: green band, candy-cane stripe, gold trim */
-html[data-event-theme="christmas"] .site-header {
-  background: var(--xmas-green);
-  border-bottom: 3px solid var(--xmas-gold);
-  margin-bottom: 2rem;
-  position: relative;
-}
-html[data-event-theme="christmas"] .site-header::before {
-  content: "";
-  display: block;
-  height: 8px;
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--xmas-red) 0 12px,
-    #fff 12px 24px
-  );
-}
-html[data-event-theme="christmas"] .site-header nav a {
-  color: #fff;
-  text-decoration: none;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.4rem;
-  letter-spacing: 0.02em;
-}
-html[data-event-theme="christmas"] .site-header nav a:hover {
-  color: var(--xmas-gold);
-}
-
-/* Cards get a festive top edge */
-html[data-event-theme="christmas"] article {
-  border-top: 4px solid var(--xmas-green);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
-}
-html[data-event-theme="christmas"] article > header {
-  font-family: Georgia, "Times New Roman", serif;
-  color: var(--xmas-red);
-  font-weight: bold;
-}
-
-html[data-event-theme="christmas"] table {
-  background: rgb(255 255 255 / 70%);
-  border-radius: 0.5rem;
-}
-
-html[data-event-theme="christmas"] mark {
-  border-radius: 1rem;
-  padding: 0.15rem 0.7rem;
-  font-weight: 600;
-}
-
-html[data-event-theme="christmas"] button[type="submit"]:not(.outline) {
-  border-color: var(--xmas-gold);
-}
-
-html[data-event-theme="christmas"] .site-footer {
-  display: block;
-  text-align: center;
-  color: var(--xmas-green);
-  margin: 3rem auto 2rem;
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-/* ---------- Halloween (always dark) ---------- */
 
 :root[data-event-theme="halloween"][data-theme="dark"] {
   --hw-orange: #ff7a1a;
@@ -197,9 +136,109 @@ html[data-event-theme="christmas"] .site-footer {
   --pico-mark-background-color: #34521b;
   --pico-mark-color: #d7f5b8;
   --pico-table-border-color: #3c2557;
+
+  /* Values for the shared theme rules below */
+  --theme-band: var(--hw-purple);
+  --theme-trim: var(--hw-orange);
+  --theme-stripe-a: var(--hw-orange);
+  --theme-stripe-b: var(--hw-night);
+  --theme-brand: var(--hw-orange);
+  --theme-brand-hover: var(--hw-green);
+  --theme-accent: var(--hw-orange);
+  --theme-card-edge: var(--hw-green);
+  --theme-card-shadow: 0 4px 18px rgb(255 122 26 / 12%);
+  --theme-table-bg: rgb(29 18 41 / 70%);
+  --theme-button-border: var(--hw-green);
+  --theme-footer-color: var(--hw-orange);
 }
 
-/* Purple-black night with a faint ghostly glow from the top corners */
+/* ---------- Shared theme rules (every theme except classic) ---------- */
+
+html[data-event-theme]:not([data-event-theme="classic"]) {
+  --theme-serif: Georgia, "Times New Roman", serif;
+}
+
+html[data-event-theme]:not([data-event-theme="classic"]) :is(h1, h2, h3) {
+  font-family: var(--theme-serif);
+}
+
+/* Header: coloured band, striped edge, trim */
+html[data-event-theme]:not([data-event-theme="classic"]) .site-header {
+  background: var(--theme-band);
+  border-bottom: 3px solid var(--theme-trim);
+  margin-bottom: 2rem;
+  position: relative;
+}
+html[data-event-theme]:not([data-event-theme="classic"]) .site-header::before {
+  content: "";
+  display: block;
+  height: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--theme-stripe-a) 0 12px,
+    var(--theme-stripe-b) 12px 24px
+  );
+}
+html[data-event-theme]:not([data-event-theme="classic"]) .site-header nav a {
+  color: var(--theme-brand);
+  text-decoration: none;
+  font-family: var(--theme-serif);
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+}
+html[data-event-theme]:not([data-event-theme="classic"]) .site-header nav a:hover {
+  color: var(--theme-brand-hover);
+}
+
+/* Cards get a coloured top edge */
+html[data-event-theme]:not([data-event-theme="classic"]) article {
+  border-top: 4px solid var(--theme-card-edge);
+  border-radius: 0.5rem;
+  box-shadow: var(--theme-card-shadow);
+}
+html[data-event-theme]:not([data-event-theme="classic"]) article > header {
+  font-family: var(--theme-serif);
+  color: var(--theme-accent);
+  font-weight: bold;
+}
+
+html[data-event-theme]:not([data-event-theme="classic"]) table {
+  background: var(--theme-table-bg);
+  border-radius: 0.5rem;
+}
+
+html[data-event-theme]:not([data-event-theme="classic"]) mark {
+  border-radius: 1rem;
+  padding: 0.15rem 0.7rem;
+  font-weight: 600;
+}
+
+html[data-event-theme]:not([data-event-theme="classic"]) button[type="submit"]:not(.outline) {
+  border-color: var(--theme-button-border);
+}
+
+html[data-event-theme]:not([data-event-theme="classic"]) .site-footer {
+  display: block;
+  text-align: center;
+  color: var(--theme-footer-color);
+  margin: 3rem auto 2rem;
+  font-family: var(--theme-serif);
+}
+
+/* ---------- Per-theme decoration ---------- */
+
+/* Christmas: soft "snowfall" speckles on the page background */
+html[data-event-theme="christmas"] body {
+  background-color: var(--xmas-cream);
+  background-image:
+    radial-gradient(circle, rgb(255 255 255 / 90%) 1.5px, transparent 2px),
+    radial-gradient(circle, rgb(200 215 230 / 45%) 1px, transparent 1.5px);
+  background-size: 90px 90px, 55px 55px;
+  background-position: 0 0, 30px 40px;
+  min-height: 100vh;
+}
+
+/* Halloween: purple-black night with a faint ghostly glow from the top corners */
 html[data-event-theme="halloween"] body {
   background-color: var(--hw-night);
   background-image:
@@ -210,69 +249,5 @@ html[data-event-theme="halloween"] body {
 }
 
 html[data-event-theme="halloween"] :is(h1, h2, h3) {
-  font-family: Georgia, "Times New Roman", serif;
   text-shadow: 0 0 14px rgb(255 122 26 / 35%);
-}
-
-/* Header: purple band, orange/black hazard stripe, orange trim */
-html[data-event-theme="halloween"] .site-header {
-  background: var(--hw-purple);
-  border-bottom: 3px solid var(--hw-orange);
-  margin-bottom: 2rem;
-  position: relative;
-}
-html[data-event-theme="halloween"] .site-header::before {
-  content: "";
-  display: block;
-  height: 8px;
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--hw-orange) 0 12px,
-    var(--hw-night) 12px 24px
-  );
-}
-html[data-event-theme="halloween"] .site-header nav a {
-  color: var(--hw-orange);
-  text-decoration: none;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.4rem;
-  letter-spacing: 0.02em;
-}
-html[data-event-theme="halloween"] .site-header nav a:hover {
-  color: var(--hw-green);
-}
-
-/* Cards get a slime-green top edge and a faint orange glow */
-html[data-event-theme="halloween"] article {
-  border-top: 4px solid var(--hw-green);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 18px rgb(255 122 26 / 12%);
-}
-html[data-event-theme="halloween"] article > header {
-  font-family: Georgia, "Times New Roman", serif;
-  color: var(--hw-orange);
-  font-weight: bold;
-}
-
-html[data-event-theme="halloween"] table {
-  background: rgb(29 18 41 / 70%);
-  border-radius: 0.5rem;
-}
-
-html[data-event-theme="halloween"] mark {
-  border-radius: 1rem;
-  padding: 0.15rem 0.7rem;
-  font-weight: 600;
-}
-
-html[data-event-theme="halloween"] button[type="submit"]:not(.outline) {
-  border-color: var(--hw-green);
-}
-
-html[data-event-theme="halloween"] .site-footer {
-  display: block;
-  text-align: center;
-  color: var(--hw-orange);
-  margin: 3rem auto 2rem;
-  font-family: Georgia, "Times New Roman", serif;
 }
