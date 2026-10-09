@@ -42,11 +42,12 @@ def create_app(test_config=None):
     csrf.init_app(app)
 
     from .format import sv_date
-    from .models import CATEGORY_LABELS
+    from .models import CATEGORIES, CATEGORY_LABELS
     from .routes import bp
 
     app.register_blueprint(bp)
     app.jinja_env.filters["sv_date"] = sv_date
+    app.jinja_env.globals["CATEGORIES"] = CATEGORIES
     app.jinja_env.globals["CATEGORY_LABELS"] = CATEGORY_LABELS
 
     @app.errorhandler(404)

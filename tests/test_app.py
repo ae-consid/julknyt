@@ -430,6 +430,16 @@ def test_claim_name_limit_ignores_surrounding_spaces(client):
     assert db.session.get(Dish, dish.id).claimed_by == "x" * limit
 
 
+def test_dish_with_unknown_category_is_not_shown(client):
+    token = make_event(client)
+    event = Event.query.filter_by(token=token).one()
+    db.session.add(Dish(event=event, name="Mystery", category="Bogus"))
+    db.session.commit()
+    resp = client.get(f"/e/{token}")
+    assert resp.status_code == 200
+    assert b"Mystery" not in resp.data
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400

@@ -2,7 +2,7 @@ from flask import Blueprint, abort, make_response, redirect, render_template, re
 
 from . import db
 from .forms import ClaimForm, DishForm, EventForm
-from .models import CATEGORIES, Dish, Event
+from .models import Dish, Event
 
 bp = Blueprint("main", __name__)
 
@@ -22,6 +22,44 @@ def _get_dish(token, dish_id):
     return event, dish
 
 
+def _is_htmx():
+    return bool(request.headers.get("HX-Request"))
+
+
+def _event_page(event, form=None, claim_errors=None):
+    # formdata=None: don't fill the add-dish form from the POST that got us here
+    form = form or DishForm(formdata=None)
+    return render_template(
+        "event.html",
+        event=event,
+        form=form,
+        claim_errors=claim_errors,
+        theme=event.theme,
+    )
+
+
+def _dish_response(event, claim_errors=None, fresh_form=False):
+    """HTMX requests get the dish list partial; plain form posts get a redirect.
+
+    claim_errors ({dish_id: [messages]}) are shown next to that dish; a plain post then
+    re-renders the page instead of redirecting. fresh_form also swaps in an empty add-dish
+    form (out of band), replacing the one the user just filled in.
+    """
+    if _is_htmx():
+        # Reload event.dishes so the partial shows the list as it is after the change
+        # that was just committed.
+        db.session.refresh(event)
+        html = render_template("_dishes.html", event=event, claim_errors=claim_errors)
+        if fresh_form:
+            html += render_template(
+                "_dish_form.html", event=event, form=DishForm(formdata=None), oob=True
+            )
+        return html
+    if claim_errors:
+        return _event_page(event, claim_errors=claim_errors)
+    return redirect(url_for("main.event", token=event.token))
+
+
 @bp.route("/", methods=["GET", "POST"])
 def index():
     form = EventForm()
@@ -39,8 +77,10 @@ def index():
     return render_template("index.html", form=form, theme=form.theme.data)
 
 
-@bp.get("/e/<token>")
-def event(token):
+# endpoint="event" keeps url_for("main.event") working; the function name would
+# otherwise clash with the local `event` variables in the routes below.
+@bp.get("/e/<token>", endpoint="event")
+def show_event(token):
     return _event_page(_get_event(token))
 
 
@@ -97,42 +137,3 @@ def delete(token, dish_id):
     db.session.delete(dish)
     db.session.commit()
     return _dish_response(event)
-
-
-def _is_htmx():
-    return bool(request.headers.get("HX-Request"))
-
-
-def _event_page(event, form=None, claim_errors=None):
-    # formdata=None: don't fill the add-dish form from the POST that got us here
-    form = form or DishForm(formdata=None)
-    return render_template(
-        "event.html",
-        event=event,
-        form=form,
-        claim_errors=claim_errors,
-        categories=CATEGORIES,
-        theme=event.theme,
-    )
-
-
-def _dish_response(event, claim_errors=None, fresh_form=False):
-    """HTMX requests get the dish list partial; plain form posts get a redirect.
-
-    claim_errors ({dish_id: [messages]}) are shown next to that dish; a plain post then
-    re-renders the page instead of redirecting. fresh_form also swaps in an empty add-dish
-    form (out of band), replacing the one the user just filled in.
-    """
-    if _is_htmx():
-        db.session.refresh(event)
-        html = render_template(
-            "_dishes.html", event=event, categories=CATEGORIES, claim_errors=claim_errors
-        )
-        if fresh_form:
-            html += render_template(
-                "_dish_form.html", event=event, form=DishForm(formdata=None), oob=True
-            )
-        return html
-    if claim_errors:
-        return _event_page(event, claim_errors=claim_errors)
-    return redirect(url_for("main.event", token=event.token))

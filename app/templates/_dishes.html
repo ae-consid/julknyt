@@ -1,7 +1,8 @@
-{% for category in categories %}
+{# Dishes whose category is not in CATEGORIES (only possible by editing the DB by hand) are not shown. #}
+{% for category in CATEGORIES %}
   {% set dishes = event.dishes | selectattr("category", "equalto", category) | list %}
   {% if dishes %}
-    <h3>{{ CATEGORY_LABELS.get(category, category) }}</h3>
+    <h3>{{ CATEGORY_LABELS[category] }}</h3>
     <table>
       <tbody>
       {% for dish in dishes %}
