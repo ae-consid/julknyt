@@ -200,3 +200,108 @@ def test_no_warning_in_debug_or_testing(monkeypatch, caplog):
     create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "DEBUG": True})
     create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "TESTING": True})
     assert "JULKNYT_SECRET_KEY is not set" not in caplog.text
+
+
+HTMX = {"HX-Request": "true"}
+
+
+def add_dish(client, token, name="Ham", category="Main"):
+    client.post(f"/e/{token}/dishes", data={"name": name, "category": category})
+    return Dish.query.filter_by(name=name).one()
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_claim_without_name_is_ignored(client, name):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": name})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by is None
+
+
+def test_htmx_claim_returns_partial(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    resp = client.post(
+        f"/e/{token}/dishes/{dish.id}/claim", data={"name": "Sara"}, headers=HTMX
+    )
+    assert resp.status_code == 200
+    assert b"Sara" in resp.data
+    assert b"<html" not in resp.data
+
+
+def test_htmx_unclaim_returns_partial(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "Sara"})
+    resp = client.post(f"/e/{token}/dishes/{dish.id}/unclaim", headers=HTMX)
+    assert resp.status_code == 200
+    assert b"Ham" in resp.data
+    assert b"Sara" not in resp.data
+    assert b"<html" not in resp.data
+
+
+def test_htmx_delete_returns_partial(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    resp = client.post(f"/e/{token}/dishes/{dish.id}/delete", headers=HTMX)
+    assert resp.status_code == 200
+    assert b"Ham" not in resp.data
+    assert b"<html" not in resp.data
+    assert Dish.query.count() == 0
+
+
+def test_add_dish_without_name_creates_nothing(client):
+    token = make_event(client)
+    plain = client.post(f"/e/{token}/dishes", data={"name": "", "category": "Main"})
+    assert plain.status_code == 302
+    htmx = client.post(
+        f"/e/{token}/dishes", data={"name": "", "category": "Main"}, headers=HTMX
+    )
+    assert htmx.status_code == 200
+    assert Dish.query.count() == 0
+
+
+@pytest.fixture
+def csrf_client():
+    """Like `client`, but with CSRF protection left on."""
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite://"})
+    with app.test_client() as c, app.app_context():
+        yield c
+
+
+EVENT_DATA = {"title": "Julbord", "date": "2026-12-24", "host_name": "Anton"}
+
+
+def hidden_token(html):
+    return re.search(r'name="csrf_token"[^>]*value="([^"]+)"', html).group(1)
+
+
+def test_post_without_csrf_token_is_rejected(csrf_client):
+    resp = csrf_client.post("/", data=EVENT_DATA)
+    assert resp.status_code == 400
+    assert "Något gick fel" in resp.get_data(as_text=True)
+    assert Event.query.count() == 0
+
+
+def test_post_with_csrf_token_is_accepted(csrf_client):
+    token = hidden_token(csrf_client.get("/").get_data(as_text=True))
+    resp = csrf_client.post("/", data={**EVENT_DATA, "csrf_token": token})
+    assert resp.status_code == 302
+    assert Event.query.count() == 1
+
+
+def test_htmx_style_csrf_header_is_accepted(csrf_client):
+    # hx-headers on <body> sends the token as X-CSRFToken instead of a form field
+    token = hidden_token(csrf_client.get("/").get_data(as_text=True))
+    resp = csrf_client.post("/", data={**EVENT_DATA, "csrf_token": token})
+    event_token = re.search(r"/e/([\w-]+)", resp.headers["Location"]).group(1)
+
+    page = csrf_client.get(f"/e/{event_token}").get_data(as_text=True)
+    header_token = re.search(r'"X-CSRFToken": "([^"]+)"', page).group(1)
+
+    url = f"/e/{event_token}/dishes"
+    data = {"name": "Ham", "category": "Main"}
+    assert csrf_client.post(url, data=data).status_code == 400
+    assert csrf_client.post(url, data=data, headers={"X-CSRFToken": header_token}).status_code == 302
+    assert Dish.query.count() == 1
