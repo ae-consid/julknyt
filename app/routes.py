@@ -117,9 +117,7 @@ def claim(token, dish_id):
     form = ClaimForm()
     if not form.validate_on_submit():
         return _dish_response(event, claim_errors={dish.id: form.name.errors})
-    if dish.claimed_by is None:
-        dish.claimed_by = form.name.data
-        db.session.commit()
+    dish.claim(form.name.data)
     return _dish_response(event)
 
 

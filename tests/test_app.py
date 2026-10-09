@@ -481,6 +481,21 @@ def test_theme_pico_modes_are_shared_with_the_preview_script(client):
         assert f'data-theme="{mode}"' in client.get(f"/e/{token}").get_data(as_text=True)
 
 
+def test_claim_does_not_overwrite_a_claim_made_in_the_meantime(client):
+    from sqlalchemy import text
+
+    token = make_event(client)
+    dish = add_dish(client, token)
+    assert dish.claimed_by is None  # the session now holds the dish as unclaimed
+    # Someone else claims it behind the session's back (as a second request would).
+    db.session.connection().execute(
+        text("UPDATE dish SET claimed_by = 'Eve' WHERE id = :id"), {"id": dish.id}
+    )
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "Sara"})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by == "Eve"
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400

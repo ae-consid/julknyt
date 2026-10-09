@@ -57,3 +57,16 @@ class Dish(db.Model):
     # An empty dietary note is stored as ""; claimed_by is None while the dish is unclaimed.
     dietary = db.Column(db.String(DIETARY_MAX), default="")
     claimed_by = db.Column(db.String(NAME_MAX), nullable=True)
+
+    def claim(self, name):
+        """Claim the dish for `name` unless someone already has.
+
+        One conditional UPDATE, so two guests claiming at the same moment can't overwrite
+        each other: only the first one matches `claimed_by IS NULL`.
+        """
+        db.session.execute(
+            db.update(Dish)
+            .where(Dish.id == self.id, Dish.claimed_by.is_(None))
+            .values(claimed_by=name)
+        )
+        db.session.commit()
