@@ -1,0 +1,14 @@
+<article id="add-dish"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <header>Lägg till en rätt</header>
+  <form method="post" action="{{ url_for('main.add_dish', token=event.token) }}"
+        hx-post="{{ url_for('main.add_dish', token=event.token) }}"
+        hx-target="#dishes">
+    {{ form.hidden_tag() }}
+    {% for field in [form.name, form.category, form.dietary, form.claimed_by] %}
+      <label>{{ field.label.text }} {{ field() }}
+        {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
+      </label>
+    {% endfor %}
+    <button type="submit">Lägg till</button>
+  </form>
+</article>

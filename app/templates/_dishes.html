@@ -29,6 +29,7 @@
                 <input name="name" placeholder="Ditt namn" required>
                 <button type="submit">Jag tar med den</button>
               </form>
+              {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
             {% endif %}
           </td>
           <td>

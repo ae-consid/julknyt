@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import Blueprint, abort, make_response, redirect, render_template, request, url_for
 
 from . import db
 from .forms import ClaimForm, DishForm, EventForm
@@ -41,39 +41,43 @@ def index():
 
 @bp.get("/e/<token>")
 def event(token):
-    event = _get_event(token)
-    return render_template(
-        "event.html",
-        event=event,
-        form=DishForm(),
-        categories=CATEGORIES,
-        theme=event.theme,
-    )
+    return _event_page(_get_event(token))
 
 
 @bp.post("/e/<token>/dishes")
 def add_dish(token):
     event = _get_event(token)
     form = DishForm()
-    if form.validate_on_submit():
-        db.session.add(
-            Dish(
-                event=event,
-                name=form.name.data.strip(),
-                category=form.category.data,
-                dietary=(form.dietary.data or "").strip(),
-                claimed_by=(form.claimed_by.data or "").strip() or None,
+    if not form.validate_on_submit():
+        if _is_htmx():
+            # Swap only the form (with its errors); the dish list stays as it is.
+            response = make_response(
+                render_template("_dish_form.html", event=event, form=form)
             )
+            response.headers["HX-Retarget"] = "#add-dish"
+            response.headers["HX-Reswap"] = "outerHTML"
+            return response
+        return _event_page(event, form=form)
+    db.session.add(
+        Dish(
+            event=event,
+            name=form.name.data.strip(),
+            category=form.category.data,
+            dietary=(form.dietary.data or "").strip(),
+            claimed_by=(form.claimed_by.data or "").strip() or None,
         )
-        db.session.commit()
-    return _dish_response(event)
+    )
+    db.session.commit()
+    return _dish_response(event, fresh_form=True)
 
 
 @bp.post("/e/<token>/dishes/<int:dish_id>/claim")
 def claim(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     form = ClaimForm()
-    if form.validate_on_submit() and dish.claimed_by is None:
+    if not form.validate_on_submit():
+        return _dish_response(event, claim_errors={dish.id: form.name.errors})
+    if dish.claimed_by is None:
         dish.claimed_by = form.name.data.strip()
         db.session.commit()
     return _dish_response(event)
@@ -95,9 +99,40 @@ def delete(token, dish_id):
     return _dish_response(event)
 
 
-def _dish_response(event):
-    """HTMX requests get the dish list partial; plain form posts get a redirect."""
-    if request.headers.get("HX-Request"):
+def _is_htmx():
+    return bool(request.headers.get("HX-Request"))
+
+
+def _event_page(event, form=None, claim_errors=None):
+    # formdata=None: don't fill the add-dish form from the POST that got us here
+    form = form or DishForm(formdata=None)
+    return render_template(
+        "event.html",
+        event=event,
+        form=form,
+        claim_errors=claim_errors,
+        categories=CATEGORIES,
+        theme=event.theme,
+    )
+
+
+def _dish_response(event, claim_errors=None, fresh_form=False):
+    """HTMX requests get the dish list partial; plain form posts get a redirect.
+
+    claim_errors ({dish_id: [messages]}) are shown next to that dish; a plain post then
+    re-renders the page instead of redirecting. fresh_form also swaps in an empty add-dish
+    form (out of band), replacing the one the user just filled in.
+    """
+    if _is_htmx():
         db.session.refresh(event)
-        return render_template("_dishes.html", event=event, categories=CATEGORIES)
+        html = render_template(
+            "_dishes.html", event=event, categories=CATEGORIES, claim_errors=claim_errors
+        )
+        if fresh_form:
+            html += render_template(
+                "_dish_form.html", event=event, form=DishForm(formdata=None), oob=True
+            )
+        return html
+    if claim_errors:
+        return _event_page(event, claim_errors=claim_errors)
     return redirect(url_for("main.event", token=event.token))

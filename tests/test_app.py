@@ -272,15 +272,83 @@ def test_htmx_delete_returns_partial(client):
     assert Dish.query.count() == 0
 
 
-def test_add_dish_without_name_creates_nothing(client):
+REQUIRED = "Det här fältet är obligatoriskt"
+
+
+def test_add_dish_without_name_shows_error(client):
     token = make_event(client)
-    plain = client.post(f"/e/{token}/dishes", data={"name": "", "category": "Main"})
-    assert plain.status_code == 302
-    htmx = client.post(
-        f"/e/{token}/dishes", data={"name": "", "category": "Main"}, headers=HTMX
-    )
-    assert htmx.status_code == 200
+    data = {"name": "", "category": "Main", "dietary": "vegansk"}
+    plain = client.post(f"/e/{token}/dishes", data=data)
+    assert plain.status_code == 200
+    page = plain.get_data(as_text=True)
+    assert "<html" in page and REQUIRED in page
+    assert 'value="vegansk"' in page  # what the user typed is kept
     assert Dish.query.count() == 0
+
+
+def test_htmx_add_dish_error_swaps_only_the_form(client):
+    token = make_event(client)
+    resp = client.post(
+        f"/e/{token}/dishes",
+        data={"name": "", "category": "Main", "dietary": "vegansk"},
+        headers=HTMX,
+    )
+    assert resp.status_code == 200
+    assert resp.headers["HX-Retarget"] == "#add-dish"
+    assert resp.headers["HX-Reswap"] == "outerHTML"
+    page = resp.get_data(as_text=True)
+    assert REQUIRED in page and 'id="add-dish"' in page
+    assert 'value="vegansk"' in page
+    assert "<html" not in page and "Inga rätter" not in page
+    assert Dish.query.count() == 0
+
+
+def test_add_dish_too_long_name_shows_error(client):
+    token = make_event(client)
+    resp = client.post(
+        f"/e/{token}/dishes", data={"name": "x" * 121, "category": "Main"}
+    )
+    assert resp.status_code == 200
+    assert "120 tecken" in resp.get_data(as_text=True)
+    assert Dish.query.count() == 0
+
+
+def test_htmx_add_dish_success_swaps_in_a_fresh_form(client):
+    token = make_event(client)
+    resp = client.post(
+        f"/e/{token}/dishes",
+        data={"name": "Risalamande", "category": "Dessert", "dietary": "glutenfri"},
+        headers=HTMX,
+    )
+    assert "HX-Retarget" not in resp.headers
+    page = resp.get_data(as_text=True)
+    assert "Risalamande" in page
+    assert 'id="add-dish" hx-swap-oob="true"' in page
+    assert 'value="glutenfri"' not in page  # the new form is empty
+
+
+def test_event_page_has_add_dish_form_without_reset_script(client):
+    token = make_event(client)
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    assert '<article id="add-dish">' in page
+    assert "this.reset()" not in page
+
+
+def test_claim_without_name_shows_error_next_to_dish(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    url = f"/e/{token}/dishes/{dish.id}/claim"
+
+    plain = client.post(url, data={"name": ""})
+    assert plain.status_code == 200
+    assert "<html" in plain.get_data(as_text=True)
+    assert REQUIRED in plain.get_data(as_text=True)
+
+    htmx = client.post(url, data={"name": "x" * 81}, headers=HTMX)
+    page = htmx.get_data(as_text=True)
+    assert "80 tecken" in page and "<html" not in page
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by is None
 
 
 @pytest.fixture

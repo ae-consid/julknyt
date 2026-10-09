@@ -9,16 +9,5 @@
 
 <section id="dishes">{% include "_dishes.html" %}</section>
 
-<article>
-  <header>Lägg till en rätt</header>
-  <form method="post" action="{{ url_for('main.add_dish', token=event.token) }}"
-        hx-post="{{ url_for('main.add_dish', token=event.token) }}"
-        hx-target="#dishes" hx-on::after-request="if(event.detail.successful) this.reset()">
-    {{ form.hidden_tag() }}
-    {% for field in [form.name, form.category, form.dietary, form.claimed_by] %}
-      <label>{{ field.label.text }} {{ field() }}</label>
-    {% endfor %}
-    <button type="submit">Lägg till</button>
-  </form>
-</article>
+{% include "_dish_form.html" %}
 {% endblock %}
