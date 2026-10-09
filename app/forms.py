@@ -39,3 +39,7 @@ class DishForm(BaseForm):
         "Ditt namn (lämna tomt för att efterfråga en rätt)",
         validators=[Optional(), Length(max=NAME_MAX)],
     )
+
+
+class ClaimForm(BaseForm):
+    name = StringField("Ditt namn", validators=[DataRequired(), Length(max=NAME_MAX)])

@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from . import db
-from .forms import DishForm, EventForm
+from .forms import ClaimForm, DishForm, EventForm
 from .models import CATEGORIES, Dish, Event
 
 bp = Blueprint("main", __name__)
@@ -72,9 +72,9 @@ def add_dish(token):
 @bp.post("/e/<token>/dishes/<int:dish_id>/claim")
 def claim(token, dish_id):
     event, dish = _get_dish(token, dish_id)
-    name = request.form.get("name", "").strip()[:80]
-    if name and dish.claimed_by is None:
-        dish.claimed_by = name
+    form = ClaimForm()
+    if form.validate_on_submit() and dish.claimed_by is None:
+        dish.claimed_by = form.name.data.strip()
         db.session.commit()
     return _dish_response(event)
 

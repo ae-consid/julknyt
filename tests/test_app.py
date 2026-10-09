@@ -219,6 +219,27 @@ def test_claim_without_name_is_ignored(client, name):
     assert db.session.get(Dish, dish.id).claimed_by is None
 
 
+def test_claim_name_is_trimmed(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "  Sara  "})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by == "Sara"
+
+
+def test_claim_name_length_limit(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    limit = Dish.claimed_by.type.length
+    # a name over the limit is rejected, not truncated
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "x" * (limit + 1)})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by is None
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "x" * limit})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by == "x" * limit
+
+
 def test_htmx_claim_returns_partial(client):
     token = make_event(client)
     dish = add_dish(client, token)
