@@ -440,6 +440,32 @@ def test_dish_with_unknown_category_is_not_shown(client):
     assert b"Mystery" not in resp.data
 
 
+def test_dish_rows_have_no_inline_styles(client):
+    token = make_event(client)
+    add_dish(client, token, name="Ham")
+    add_dish(client, token, name="Sill")
+    claimed = Dish.query.filter_by(name="Sill").one()
+    client.post(f"/e/{token}/dishes/{claimed.id}/claim", data={"name": "Sara"})
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    assert "Avboka" in page and "Jag tar med den" in page
+    assert 'style="' not in page
+
+
+def test_dish_forms_use_the_same_url_for_post_and_htmx(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    base = f"/e/{token}/dishes/{dish.id}"
+    forms = re.findall(r"<form class=\"[^\"]+\".*?</form>", page, re.S)
+    by_action = {re.search(r'action="([^"]+)"', f).group(1): f for f in forms}
+    assert set(by_action) == {f"{base}/claim", f"{base}/delete"}
+    for action, form in by_action.items():
+        assert f'hx-post="{action}"' in form
+        assert 'name="csrf_token"' in form
+    assert "hx-confirm" in by_action[f"{base}/delete"]
+    assert "hx-confirm" not in by_action[f"{base}/claim"]
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400

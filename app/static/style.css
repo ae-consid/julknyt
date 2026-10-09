@@ -5,6 +5,19 @@
  * data-theme mapping in base.html and the live preview script in index.html).
  */
 
+/* Layout helpers for the per-dish forms in _dishes.html */
+.form-inline {
+  display: inline;
+}
+.form-claim {
+  display: flex;
+  gap: .5rem;
+  margin: 0;
+}
+.form-flush {
+  margin: 0;
+}
+
 /* Theme-specific bits of the shared header/footer markup: hidden unless the theme shows them */
 .site-footer,
 .site-footer p,

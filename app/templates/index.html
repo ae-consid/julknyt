@@ -1,13 +1,12 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m %}
 {% block content %}
 <h1>Planera ert knytkalas</h1>
 <p>Skapa ett evenemang, dela länken och låt alla anmäla vad de tar med.</p>
 <form method="post">
   {{ form.hidden_tag() }}
   {% for field in [form.title, form.date, form.location, form.host_name, form.theme] %}
-    <label>{{ field.label.text }} {{ field() }}
-      {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
-    </label>
+    {{ m.field_row(field) }}
   {% endfor %}
   <button type="submit">Skapa evenemang</button>
 </form>

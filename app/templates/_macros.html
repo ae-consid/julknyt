@@ -1,0 +1,21 @@
+{#
+  One POST form for a dish action. It works as a plain form post without JavaScript and,
+  with HTMX, swaps #dishes instead. The hidden csrf_token is what plain posts need and
+  hx-headers on <body> is what HTMX requests use; both stay on purpose (see CLAUDE.md).
+  Use with {% call dish_form(...) %}buttons and inputs{% endcall %}.
+#}
+{% macro dish_form(endpoint, event, dish, css_class, confirm=None) %}
+{%- set url = url_for(endpoint, token=event.token, dish_id=dish.id) -%}
+<form class="{{ css_class }}" method="post" action="{{ url }}" hx-post="{{ url }}"
+      hx-target="#dishes"{% if confirm %} hx-confirm="{{ confirm }}"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ caller() }}
+</form>
+{% endmacro %}
+
+{# Label, field and its validation errors. #}
+{% macro field_row(field) %}
+<label>{{ field.label.text }} {{ field() }}
+  {% for err in field.errors %}<small>{{ err }}</small>{% endfor %}
+</label>
+{% endmacro %}

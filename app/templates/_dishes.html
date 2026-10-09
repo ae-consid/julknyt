@@ -1,3 +1,4 @@
+{% import "_macros.html" as m %}
 {# Dishes whose category is not in CATEGORIES (only possible by editing the DB by hand) are not shown. #}
 {% for category in CATEGORIES %}
   {% set dishes = event.dishes | selectattr("category", "equalto", category) | list %}
@@ -14,33 +15,21 @@
           <td>
             {% if dish.claimed_by %}
               <mark>{{ dish.claimed_by }}</mark>
-              <form style="display:inline" method="post"
-                    action="{{ url_for('main.unclaim', token=event.token, dish_id=dish.id) }}"
-                    hx-post="{{ url_for('main.unclaim', token=event.token, dish_id=dish.id) }}"
-                    hx-target="#dishes">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% call m.dish_form('main.unclaim', event, dish, 'form-inline') %}
                 <button class="outline secondary" type="submit">Avboka</button>
-              </form>
+              {% endcall %}
             {% else %}
-              <form style="display:flex;gap:.5rem;margin:0" method="post"
-                    action="{{ url_for('main.claim', token=event.token, dish_id=dish.id) }}"
-                    hx-post="{{ url_for('main.claim', token=event.token, dish_id=dish.id) }}"
-                    hx-target="#dishes">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% call m.dish_form('main.claim', event, dish, 'form-claim') %}
                 <input name="name" placeholder="Ditt namn" required>
                 <button type="submit">Jag tar med den</button>
-              </form>
+              {% endcall %}
               {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
             {% endif %}
           </td>
           <td>
-            <form style="margin:0" method="post"
-                  action="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
-                  hx-post="{{ url_for('main.delete', token=event.token, dish_id=dish.id) }}"
-                  hx-target="#dishes" hx-confirm="Ta bort den här rätten?">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% call m.dish_form('main.delete', event, dish, 'form-flush', 'Ta bort den här rätten?') %}
               <button class="outline contrast" type="submit" aria-label="Ta bort">✕</button>
-            </form>
+            {% endcall %}
           </td>
         </tr>
       {% endfor %}
