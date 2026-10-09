@@ -38,6 +38,7 @@ class Event(db.Model):
     token = db.Column(db.String(32), unique=True, nullable=False, default=_new_token)
     title = db.Column(db.String(TITLE_MAX), nullable=False)
     date = db.Column(db.Date, nullable=False)
+    # An empty location is stored as "" (not None).
     location = db.Column(db.String(LOCATION_MAX), default="")
     host_name = db.Column(db.String(NAME_MAX), nullable=False)
     theme = db.Column(db.String(THEME_MAX), nullable=False, default=DEFAULT_THEME)
@@ -51,5 +52,6 @@ class Dish(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=False)
     name = db.Column(db.String(DISH_NAME_MAX), nullable=False)
     category = db.Column(db.String(CATEGORY_MAX), nullable=False, default="Other")
+    # An empty dietary note is stored as ""; claimed_by is None while the dish is unclaimed.
     dietary = db.Column(db.String(DIETARY_MAX), default="")
     claimed_by = db.Column(db.String(NAME_MAX), nullable=True)

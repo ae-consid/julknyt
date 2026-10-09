@@ -385,6 +385,51 @@ def test_form_length_limits_match_model_columns(client):
     assert length.max == Dish.claimed_by.type.length
 
 
+def test_event_fields_are_trimmed_and_empty_location_is_empty_string(client):
+    token = make_event(client, title="  Julbord  ", host_name="  Anton ", location="  Hemma ")
+    event = Event.query.filter_by(token=token).one()
+    assert (event.title, event.host_name, event.location) == ("Julbord", "Anton", "Hemma")
+
+    other = Event.query.filter_by(token=make_event(client, location="")).one()
+    assert other.location == ""
+
+
+def test_whitespace_only_event_title_is_rejected(client):
+    resp = client.post("/", data={**EVENT_DATA, "title": "   "})
+    assert resp.status_code == 200
+    assert REQUIRED in resp.get_data(as_text=True)
+    assert Event.query.count() == 0
+
+
+def test_dish_fields_are_trimmed(client):
+    token = make_event(client)
+    client.post(
+        f"/e/{token}/dishes",
+        data={"name": "  Ham ", "category": "Main", "dietary": "  vegansk ", "claimed_by": "  Eva "},
+    )
+    dish = Dish.query.one()
+    assert (dish.name, dish.dietary, dish.claimed_by) == ("Ham", "vegansk", "Eva")
+
+
+def test_whitespace_only_claimed_by_leaves_dish_unclaimed(client):
+    token = make_event(client)
+    client.post(
+        f"/e/{token}/dishes", data={"name": "Ham", "category": "Main", "claimed_by": "   "}
+    )
+    dish = Dish.query.one()
+    assert dish.claimed_by is None
+    assert dish.dietary == ""
+
+
+def test_claim_name_limit_ignores_surrounding_spaces(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    limit = Dish.claimed_by.type.length
+    client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "x" * limit + "   "})
+    db.session.expire_all()
+    assert db.session.get(Dish, dish.id).claimed_by == "x" * limit
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400

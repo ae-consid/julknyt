@@ -15,6 +15,10 @@ from .models import (
 )
 
 
+def _strip(value):
+    return (value or "").strip()
+
+
 class BaseForm(FlaskForm):
     class Meta(FlaskForm.Meta):
         # WTForms' built-in validation messages in Swedish (needs WTF_I18N_ENABLED=False)
@@ -22,24 +26,39 @@ class BaseForm(FlaskForm):
 
 
 class EventForm(BaseForm):
-    title = StringField("Evenemangets titel", validators=[DataRequired(), Length(max=TITLE_MAX)])
+    title = StringField(
+        "Evenemangets titel",
+        validators=[DataRequired(), Length(max=TITLE_MAX)],
+        filters=[_strip],
+    )
     date = DateField("Datum", validators=[DataRequired()])
-    location = StringField("Plats", validators=[Optional(), Length(max=LOCATION_MAX)])
-    host_name = StringField("Ditt namn", validators=[DataRequired(), Length(max=NAME_MAX)])
+    location = StringField(
+        "Plats", validators=[Optional(), Length(max=LOCATION_MAX)], filters=[_strip]
+    )
+    host_name = StringField(
+        "Ditt namn", validators=[DataRequired(), Length(max=NAME_MAX)], filters=[_strip]
+    )
     theme = SelectField("Tema", choices=THEMES, default=DEFAULT_THEME)
 
 
 class DishForm(BaseForm):
-    name = StringField("Rätt", validators=[DataRequired(), Length(max=DISH_NAME_MAX)])
+    name = StringField(
+        "Rätt", validators=[DataRequired(), Length(max=DISH_NAME_MAX)], filters=[_strip]
+    )
     category = SelectField("Kategori", choices=[(c, CATEGORY_LABELS[c]) for c in CATEGORIES])
     dietary = StringField(
-        "Kostnotering (t.ex. vegansk, glutenfri)", validators=[Optional(), Length(max=DIETARY_MAX)]
+        "Kostnotering (t.ex. vegansk, glutenfri)",
+        validators=[Optional(), Length(max=DIETARY_MAX)],
+        filters=[_strip],
     )
     claimed_by = StringField(
         "Ditt namn (lämna tomt för att efterfråga en rätt)",
         validators=[Optional(), Length(max=NAME_MAX)],
+        filters=[_strip],
     )
 
 
 class ClaimForm(BaseForm):
-    name = StringField("Ditt namn", validators=[DataRequired(), Length(max=NAME_MAX)])
+    name = StringField(
+        "Ditt namn", validators=[DataRequired(), Length(max=NAME_MAX)], filters=[_strip]
+    )

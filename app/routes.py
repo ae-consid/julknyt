@@ -27,10 +27,10 @@ def index():
     form = EventForm()
     if form.validate_on_submit():
         event = Event(
-            title=form.title.data.strip(),
+            title=form.title.data,
             date=form.date.data,
-            location=(form.location.data or "").strip(),
-            host_name=form.host_name.data.strip(),
+            location=form.location.data,
+            host_name=form.host_name.data,
             theme=form.theme.data,
         )
         db.session.add(event)
@@ -61,10 +61,10 @@ def add_dish(token):
     db.session.add(
         Dish(
             event=event,
-            name=form.name.data.strip(),
+            name=form.name.data,
             category=form.category.data,
-            dietary=(form.dietary.data or "").strip(),
-            claimed_by=(form.claimed_by.data or "").strip() or None,
+            dietary=form.dietary.data,
+            claimed_by=form.claimed_by.data or None,
         )
     )
     db.session.commit()
@@ -78,7 +78,7 @@ def claim(token, dish_id):
     if not form.validate_on_submit():
         return _dish_response(event, claim_errors={dish.id: form.name.errors})
     if dish.claimed_by is None:
-        dish.claimed_by = form.name.data.strip()
+        dish.claimed_by = form.name.data
         db.session.commit()
     return _dish_response(event)
 
