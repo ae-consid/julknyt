@@ -10,6 +10,44 @@ csrf = CSRFProtect()
 DEV_SECRET_KEY = "dev-only-change-me"
 
 
+def _warn_if_insecure_key(app):
+    if app.config["SECRET_KEY"] != DEV_SECRET_KEY or app.debug or app.testing:
+        return
+    hint = (
+        " The old SECRET_KEY variable is no longer read; rename it to JULKNYT_SECRET_KEY."
+        if "SECRET_KEY" in os.environ
+        else ""
+    )
+    app.logger.warning(
+        "JULKNYT_SECRET_KEY is not set: using the insecure development key, so sessions "
+        "and CSRF tokens can be forged. Set JULKNYT_SECRET_KEY before running in "
+        "production.%s",
+        hint,
+    )
+
+
+def _error_page(title, message, status):
+    return render_template("error.html", title=title, message=message), status
+
+
+def _register_error_handlers(app):
+    @app.errorhandler(404)
+    def not_found(_error):
+        return _error_page(
+            "Sidan hittades inte",
+            "Länken verkar vara fel eller så har evenemanget tagits bort.",
+            404,
+        )
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(_error):
+        return _error_page(
+            "Något gick fel",
+            "Formuläret är ogiltigt eller har gått ut. Ladda om sidan och försök igen.",
+            400,
+        )
+
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -23,18 +61,7 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    if app.config["SECRET_KEY"] == DEV_SECRET_KEY and not (app.debug or app.testing):
-        hint = (
-            " The old SECRET_KEY variable is no longer read; rename it to JULKNYT_SECRET_KEY."
-            if "SECRET_KEY" in os.environ
-            else ""
-        )
-        app.logger.warning(
-            "JULKNYT_SECRET_KEY is not set: using the insecure development key, so sessions "
-            "and CSRF tokens can be forged. Set JULKNYT_SECRET_KEY before running in "
-            "production.%s",
-            hint,
-        )
+    _warn_if_insecure_key(app)
 
     os.makedirs(app.instance_path, exist_ok=True)
 
@@ -51,21 +78,7 @@ def create_app(test_config=None):
     app.jinja_env.globals["CATEGORY_LABELS"] = CATEGORY_LABELS
     app.jinja_env.globals["THEME_PICO_MODES"] = THEME_PICO_MODES
 
-    @app.errorhandler(404)
-    def not_found(_error):
-        return render_template(
-            "error.html",
-            title="Sidan hittades inte",
-            message="Länken verkar vara fel eller så har evenemanget tagits bort.",
-        ), 404
-
-    @app.errorhandler(CSRFError)
-    def csrf_error(_error):
-        return render_template(
-            "error.html",
-            title="Något gick fel",
-            message="Formuläret är ogiltigt eller har gått ut. Ladda om sidan och försök igen.",
-        ), 400
+    _register_error_handlers(app)
 
     with app.app_context():
         db.create_all()
