@@ -42,13 +42,14 @@ def create_app(test_config=None):
     csrf.init_app(app)
 
     from .format import sv_date
-    from .models import CATEGORIES, CATEGORY_LABELS
+    from .models import CATEGORIES, CATEGORY_LABELS, THEME_PICO_MODES
     from .routes import bp
 
     app.register_blueprint(bp)
     app.jinja_env.filters["sv_date"] = sv_date
     app.jinja_env.globals["CATEGORIES"] = CATEGORIES
     app.jinja_env.globals["CATEGORY_LABELS"] = CATEGORY_LABELS
+    app.jinja_env.globals["THEME_PICO_MODES"] = THEME_PICO_MODES
 
     @app.errorhandler(404)
     def not_found(_error):

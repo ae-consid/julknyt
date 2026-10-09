@@ -1,8 +1,8 @@
 /*
  * Themes layered on top of Pico.css. The theme is set on <html data-event-theme="...">.
  * "classic" is plain Pico (follows the system light/dark setting). Every other rule is
- * scoped to one theme: "christmas" is always light, "halloween" is always dark (see the
- * data-theme mapping in base.html and the live preview script in index.html).
+ * scoped to one theme: "christmas" is always light, "halloween" is always dark (see
+ * THEME_PICO_MODES in models.py, used by base.html and the live preview in index.html).
  */
 
 /* Layout helpers for the per-dish forms in _dishes.html */

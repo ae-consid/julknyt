@@ -14,7 +14,7 @@
   // Live preview of the chosen theme; the server applies it for real once the event exists.
   document.getElementById("theme").addEventListener("change", function () {
     var html = document.documentElement;
-    var picoModes = { christmas: "light", halloween: "dark" };  // keep in sync with base.html
+    var picoModes = {{ THEME_PICO_MODES|tojson }};
     html.dataset.eventTheme = this.value;
     if (picoModes[this.value]) html.dataset.theme = picoModes[this.value];
     else delete html.dataset.theme;

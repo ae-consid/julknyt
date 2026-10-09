@@ -18,6 +18,8 @@ THEMES = [
     ("halloween", "Halloween 🎃"),
 ]
 DEFAULT_THEME = "classic"
+# Pico colour mode forced by a theme; themes not listed follow the system light/dark setting.
+THEME_PICO_MODES = {"christmas": "light", "halloween": "dark"}
 
 # Max lengths shared by the DB columns below and the form validators in forms.py.
 TITLE_MAX = 120

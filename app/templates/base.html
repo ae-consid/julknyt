@@ -1,7 +1,6 @@
 <!doctype html>
 {%- set theme = theme|default('classic') -%}
-{%- set pico_modes = {'christmas': 'light', 'halloween': 'dark'} -%}
-<html lang="sv" data-event-theme="{{ theme }}"{% if theme in pico_modes %} data-theme="{{ pico_modes[theme] }}"{% endif %}>
+<html lang="sv" data-event-theme="{{ theme }}"{% if theme in THEME_PICO_MODES %} data-theme="{{ THEME_PICO_MODES[theme] }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

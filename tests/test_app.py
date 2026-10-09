@@ -466,6 +466,21 @@ def test_dish_forms_use_the_same_url_for_post_and_htmx(client):
     assert "hx-confirm" not in by_action[f"{base}/claim"]
 
 
+def test_classic_theme_does_not_force_a_pico_mode(client):
+    token = make_event(client)
+    assert b"data-theme=" not in client.get(f"/e/{token}").data
+
+
+def test_theme_pico_modes_are_shared_with_the_preview_script(client):
+    from app.models import THEME_PICO_MODES
+
+    home = client.get("/").get_data(as_text=True)
+    for theme, mode in THEME_PICO_MODES.items():
+        assert f'"{theme}": "{mode}"' in home
+        token = make_event(client, theme=theme)
+        assert f'data-theme="{mode}"' in client.get(f"/e/{token}").get_data(as_text=True)
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400
