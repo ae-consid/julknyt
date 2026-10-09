@@ -19,6 +19,15 @@ THEMES = [
 ]
 DEFAULT_THEME = "classic"
 
+# Max lengths shared by the DB columns below and the form validators in forms.py.
+TITLE_MAX = 120
+LOCATION_MAX = 200
+NAME_MAX = 80  # host_name and claimed_by
+DISH_NAME_MAX = 120
+DIETARY_MAX = 120
+CATEGORY_MAX = 20
+THEME_MAX = 20
+
 
 def _new_token():
     return secrets.token_urlsafe(8)
@@ -27,11 +36,11 @@ def _new_token():
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(32), unique=True, nullable=False, default=_new_token)
-    title = db.Column(db.String(120), nullable=False)
+    title = db.Column(db.String(TITLE_MAX), nullable=False)
     date = db.Column(db.Date, nullable=False)
-    location = db.Column(db.String(200), default="")
-    host_name = db.Column(db.String(80), nullable=False)
-    theme = db.Column(db.String(20), nullable=False, default=DEFAULT_THEME)
+    location = db.Column(db.String(LOCATION_MAX), default="")
+    host_name = db.Column(db.String(NAME_MAX), nullable=False)
+    theme = db.Column(db.String(THEME_MAX), nullable=False, default=DEFAULT_THEME)
     dishes = db.relationship(
         "Dish", backref="event", cascade="all, delete-orphan", order_by="Dish.id"
     )
@@ -40,7 +49,7 @@ class Event(db.Model):
 class Dish(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=False)
-    name = db.Column(db.String(120), nullable=False)
-    category = db.Column(db.String(20), nullable=False, default="Other")
-    dietary = db.Column(db.String(120), default="")
-    claimed_by = db.Column(db.String(80), nullable=True)
+    name = db.Column(db.String(DISH_NAME_MAX), nullable=False)
+    category = db.Column(db.String(CATEGORY_MAX), nullable=False, default="Other")
+    dietary = db.Column(db.String(DIETARY_MAX), default="")
+    claimed_by = db.Column(db.String(NAME_MAX), nullable=True)

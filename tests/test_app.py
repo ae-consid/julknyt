@@ -277,6 +277,25 @@ def hidden_token(html):
     return re.search(r'name="csrf_token"[^>]*value="([^"]+)"', html).group(1)
 
 
+def test_form_length_limits_match_model_columns(client):
+    from wtforms.validators import Length
+
+    from app.forms import DishForm, EventForm
+
+    pairs = [
+        (EventForm, Event, ["title", "location", "host_name"]),
+        (DishForm, Dish, ["name", "dietary"]),
+    ]
+    for form_class, model, fields in pairs:
+        form = form_class()
+        for field in fields:
+            (length,) = [v for v in getattr(form, field).validators if isinstance(v, Length)]
+            assert length.max == getattr(model, field).type.length, field
+    # DishForm.claimed_by is the dish's claimer; EventForm.host_name has the same limit
+    (length,) = [v for v in DishForm().claimed_by.validators if isinstance(v, Length)]
+    assert length.max == Dish.claimed_by.type.length
+
+
 def test_post_without_csrf_token_is_rejected(csrf_client):
     resp = csrf_client.post("/", data=EVENT_DATA)
     assert resp.status_code == 400
