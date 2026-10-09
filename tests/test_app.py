@@ -454,6 +454,16 @@ def test_dish_rows_have_no_inline_styles(client):
     assert 'style="' not in page
 
 
+def test_cdn_assets_are_pinned_with_integrity_hashes(client):
+    page = client.get("/").get_data(as_text=True)
+    tags = re.findall(r"<(?:link|script)[^>]*(?:cdn\.jsdelivr\.net|unpkg\.com)[^>]*>", page, re.S)
+    assert len(tags) == 2
+    for tag in tags:
+        assert re.search(r"@\d+\.\d+\.\d+", tag)  # exact version, not a range
+        assert 'integrity="sha384-' in tag
+        assert 'crossorigin="anonymous"' in tag
+
+
 def test_dish_forms_use_the_same_url_for_post_and_htmx(client):
     token = make_event(client)
     dish = add_dish(client, token)

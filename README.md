@@ -35,11 +35,13 @@ If PowerShell blocks the activation script, allow it for the current window only
 Set-ExecutionPolicy -Scope Process RemoteSigned
 ```
 
-Then install the dependencies:
+Then install the dependencies. For development (includes pytest):
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+For running the app only, `pip install -r requirements.txt` is enough. Both files pin exact versions of the direct dependencies; they were tested on Python 3.14.
 
 ### 3. Configure (optional for local use)
 The app reads two environment variables:
@@ -99,6 +101,8 @@ gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app
 - To let guests reach the app from outside your network, use a tunnel such as Cloudflare Tunnel or Tailscale instead of opening router ports.
 
 ## Test
+
+Needs the development dependencies (`requirements-dev.txt`):
 
 ```bash
 pytest
