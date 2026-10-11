@@ -4,10 +4,10 @@
   hx-headers on <body> is what HTMX requests use; both stay on purpose (see CLAUDE.md).
   Use with {% call dish_form(...) %}buttons and inputs{% endcall %}.
 #}
-{% macro dish_form(endpoint, event, dish, css_class, confirm=None) %}
+{% macro dish_form(endpoint, event, dish, css_class) %}
 {%- set url = url_for(endpoint, token=event.token, dish_id=dish.id) -%}
 <form class="{{ css_class }}" method="post" action="{{ url }}" hx-post="{{ url }}"
-      hx-target="#dishes"{% if confirm %} hx-confirm="{{ confirm }}"{% endif %}>
+      hx-target="#dishes">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {{ caller() }}
 </form>

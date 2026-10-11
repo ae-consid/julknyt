@@ -27,6 +27,22 @@
   margin: 0;
 }
 
+/* Delete confirmation: the ✕ opens a small panel with the question and the delete button */
+.confirm-delete {
+  margin: 0;
+}
+.confirm-delete summary[role="button"] {
+  margin: 0;
+  text-align: center;
+}
+.confirm-delete summary::after {
+  display: none;
+}
+.confirm-delete p {
+  margin: .5rem 0;
+  font-size: .875em;
+}
+
 /* Theme-specific bits of the shared header/footer markup: hidden unless the theme shows them */
 .site-footer,
 .site-footer p,

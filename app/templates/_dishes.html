@@ -27,9 +27,14 @@
             {% endif %}
           </td>
           <td>
-            {% call m.dish_form('main.delete', event, dish, 'form-flush', 'Ta bort den här rätten?') %}
-              <button class="outline contrast" type="submit" aria-label="Ta bort">✕</button>
-            {% endcall %}
+            {# Confirm in the page: a native confirm() dialog is not available everywhere. #}
+            <details class="confirm-delete">
+              <summary role="button" class="outline contrast" aria-label="Ta bort">✕</summary>
+              <p>Ta bort den här rätten?</p>
+              {% call m.dish_form('main.delete', event, dish, 'form-flush') %}
+                <button class="contrast" type="submit">Ja, ta bort</button>
+              {% endcall %}
+            </details>
           </td>
         </tr>
       {% endfor %}

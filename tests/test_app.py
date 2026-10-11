@@ -484,8 +484,11 @@ def test_dish_forms_use_the_same_url_for_post_and_htmx(client):
     for action, form in by_action.items():
         assert f'hx-post="{action}"' in form
         assert 'name="csrf_token"' in form
-    assert "hx-confirm" in by_action[f"{base}/delete"]
-    assert "hx-confirm" not in by_action[f"{base}/claim"]
+    # delete is confirmed in the page, not with a native confirm() dialog
+    assert "hx-confirm" not in page
+    panel = re.search(r'<details class="confirm-delete">.*?</details>', page, re.S).group(0)
+    assert "Ta bort den här rätten?" in panel and "Ja, ta bort" in panel
+    assert by_action[f"{base}/delete"] in panel
 
 
 # --- CSRF --------------------------------------------------------------------------------
