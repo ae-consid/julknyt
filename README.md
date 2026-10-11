@@ -7,7 +7,7 @@ Stack: Flask, Jinja2, HTMX, SQLite (Flask-SQLAlchemy), Pico.css.
 ## Setup and running
 
 ### Prerequisites
-- Python 3.10 or newer (the project is developed on Python 3.14)
+- Python 3.11 or newer (developed and tested on Python 3.14; the latest SQLAlchemy needs 3.11)
 - git
 
 ### 1. Get the code
