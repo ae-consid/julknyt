@@ -10,7 +10,7 @@
  * its body background, and its footer/brand markup in base.html.
  */
 
-/* Layout helpers for the per-dish forms in _dishes.html */
+/* Layout helpers for the per-dish rows in _dishes.html */
 .form-inline {
   display: inline;
 }
@@ -18,29 +18,69 @@
 .form-inline button {
   width: auto;
 }
+/* The name box and the button share the width equally and wrap onto two lines when the
+   cell is too narrow (phones) instead of being squeezed. */
 .form-claim {
   display: flex;
+  flex-wrap: wrap;
   gap: .5rem;
   margin: 0;
+}
+.form-claim input,
+.form-claim button {
+  flex: 1 1 8rem;
+  min-width: 0;
 }
 .form-flush {
   margin: 0;
 }
+/* Pico gives inputs and buttons a bottom margin; without this they sit above the centre line
+   of the row while the ✕ below does not. */
+.form-claim input,
+.form-claim button,
+.form-inline button {
+  margin-bottom: 0;
+}
 
-/* Delete confirmation: the ✕ opens a small panel with the question and the delete button */
+/* Delete column: as narrow as the ✕, so it lines up at the right edge of every category table */
+.cell-delete {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Delete confirmation: the ✕ opens a popover with the question and the delete button. It is
+   positioned over the page so opening it does not change the size of the row or the column. */
 .confirm-delete {
+  position: relative;
   margin: 0;
 }
 .confirm-delete summary[role="button"] {
+  width: 3.5rem;
   margin: 0;
   text-align: center;
 }
 .confirm-delete summary::after {
   display: none;
 }
-.confirm-delete p {
-  margin: .5rem 0;
+.confirm-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  min-width: 12rem;
+  margin-top: .25rem;
+  padding: .75rem;
+  background: var(--pico-card-background-color);
+  border: var(--pico-border-width) solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  box-shadow: var(--pico-card-box-shadow);
+}
+.confirm-panel p {
+  margin: 0 0 .5rem;
   font-size: .875em;
+}
+.confirm-panel button {
+  margin: 0;
 }
 
 /* Theme-specific bits of the shared header/footer markup: hidden unless the theme shows them */

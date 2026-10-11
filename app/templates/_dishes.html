@@ -26,14 +26,16 @@
               {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
             {% endif %}
           </td>
-          <td>
+          <td class="cell-delete">
             {# Confirm in the page: a native confirm() dialog is not available everywhere. #}
             <details class="confirm-delete">
               <summary role="button" class="outline contrast" aria-label="Ta bort">✕</summary>
-              <p>Ta bort den här rätten?</p>
-              {% call m.dish_form('main.delete', event, dish, 'form-flush') %}
-                <button class="contrast" type="submit">Ja, ta bort</button>
-              {% endcall %}
+              <div class="confirm-panel">
+                <p>Ta bort den här rätten?</p>
+                {% call m.dish_form('main.delete', event, dish, 'form-flush') %}
+                  <button class="contrast" type="submit">Ja, ta bort</button>
+                {% endcall %}
+              </div>
             </details>
           </td>
         </tr>
