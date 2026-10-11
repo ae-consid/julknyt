@@ -14,6 +14,10 @@
 .form-inline {
   display: inline;
 }
+/* Pico stretches buttons to the full width; keep "Avboka" the size of its label. */
+.form-inline button {
+  width: auto;
+}
 .form-claim {
   display: flex;
   gap: .5rem;
