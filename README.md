@@ -43,7 +43,7 @@ pip install -r requirements-dev.txt
 
 For running the app only, `pip install -r requirements.txt` is enough. Both files pin exact versions of the direct dependencies; they were tested on Python 3.14.
 
-### 3. Configure (optional for local use)
+### 3. Configure
 The app reads two environment variables:
 
 | Variable | Default | Purpose |
@@ -51,7 +51,7 @@ The app reads two environment variables:
 | `JULKNYT_SECRET_KEY` | an insecure development value | Signs sessions and CSRF tokens. **Set a random value anywhere other than your own machine.** |
 | `JULKNYT_DATABASE_URL` | `sqlite:///instance/potluck.db` | Database connection string |
 
-When `JULKNYT_SECRET_KEY` is missing and debug mode is off, the app logs a warning at startup. In production, check the log for it.
+Outside debug mode (`--debug`) and the tests, the app **refuses to start** without `JULKNYT_SECRET_KEY`, because sessions and CSRF tokens could be forged with the built-in development key. For local development, `flask --app wsgi run --debug` works without it.
 
 Generate a key:
 

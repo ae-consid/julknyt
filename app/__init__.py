@@ -10,7 +10,8 @@ csrf = CSRFProtect()
 DEV_SECRET_KEY = "dev-only-change-me"
 
 
-def _warn_if_insecure_key(app):
+def _require_secret_key(app):
+    """Refuse to run with the public development key outside debug mode and tests."""
     if app.config["SECRET_KEY"] != DEV_SECRET_KEY or app.debug or app.testing:
         return
     hint = (
@@ -18,11 +19,10 @@ def _warn_if_insecure_key(app):
         if "SECRET_KEY" in os.environ
         else ""
     )
-    app.logger.warning(
-        "JULKNYT_SECRET_KEY is not set: using the insecure development key, so sessions "
-        "and CSRF tokens can be forged. Set JULKNYT_SECRET_KEY before running in "
-        "production.%s",
-        hint,
+    raise RuntimeError(
+        "JULKNYT_SECRET_KEY is not set. Without it sessions and CSRF tokens can be forged, "
+        "so the app will not start outside debug mode. Set JULKNYT_SECRET_KEY to a random "
+        f"value (see the README).{hint}"
     )
 
 
@@ -61,7 +61,7 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    _warn_if_insecure_key(app)
+    _require_secret_key(app)
 
     os.makedirs(app.instance_path, exist_ok=True)
 
