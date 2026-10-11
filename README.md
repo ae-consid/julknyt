@@ -2,7 +2,7 @@
 
 A small Flask app for planning a Christmas potluck. Create an event, share the link, and guests claim dishes.
 
-Stack: Flask, Jinja2, HTMX, SQLite (Flask-SQLAlchemy), Pico.css.
+Stack: Flask, Jinja2, HTMX, SQLite (Flask-SQLAlchemy, Flask-Migrate), Pico.css.
 
 ## Setup and running
 
@@ -70,10 +70,17 @@ export JULKNYT_SECRET_KEY="paste-the-generated-key-here"
 ```
 
 ### 4. Database
-There is nothing to set up. On first start the app creates the `instance/` folder, the SQLite file `instance/potluck.db` and the tables (`instance/` is git-ignored).
+The schema is managed with Flask-Migrate (Alembic). Create the database (the `instance/` folder and the SQLite file `instance/potluck.db`, which is git-ignored) by running the migrations once, and again after every update that adds a migration:
+
+```bash
+flask --app wsgi db upgrade
+```
+
+The command needs `JULKNYT_SECRET_KEY` (step 3), like the app itself; for local development `flask --app wsgi --debug db upgrade` works without it.
 
 - The user running the app needs write access to `instance/`.
-- There are no migrations yet. If you change a model, delete `instance/potluck.db` (this deletes all events) or add a migration tool first.
+- **Already have a database from before migrations were added?** It has the same tables, so mark it as up to date instead of upgrading: `flask --app wsgi db stamp head` (once).
+- **Changing a model:** edit `app/models.py`, then `flask --app wsgi db migrate -m "what changed"`, read the new file in `migrations/versions/`, commit it, and run `flask --app wsgi db upgrade`. A test fails if a model and the migrations disagree.
 
 ### 5. Run the development server
 ```bash
@@ -90,7 +97,7 @@ Open <http://127.0.0.1:5000>. Stop the server with `Ctrl+C`. If port 5000 is alr
 The user interface is in Swedish.
 
 ### Running in production (Linux)
-Use gunicorn (already in `requirements.txt`) instead of the development server, and set `JULKNYT_SECRET_KEY` first:
+Use gunicorn (already in `requirements.txt`) instead of the development server. Set `JULKNYT_SECRET_KEY` first and run `flask --app wsgi db upgrade` on every deploy:
 
 ```bash
 gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app

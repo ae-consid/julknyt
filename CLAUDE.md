@@ -11,7 +11,7 @@ Keep it simple. This is a small app for a handful of people, not a platform.
 - **Python 3.14**, **Flask 3** with an application factory (`create_app` in `app/__init__.py`) and a single blueprint (`app/routes.py`)
 - **Jinja2** server-rendered templates in `app/templates/`; `_dishes.html` is the partial that HTMX swaps
 - **HTMX** (CDN) for interactivity without a JS framework; CSRF token is sent via `hx-headers` on `<body>`
-- **SQLite** through **Flask-SQLAlchemy**; the DB file lives in `instance/` (git-ignored); tables are created with `db.create_all()` (no migrations yet)
+- **SQLite** through **Flask-SQLAlchemy**; the DB file lives in `instance/` (git-ignored); the schema is managed with **Flask-Migrate** (`migrations/`; run `flask --app wsgi db upgrade` to create or update the database)
 - **Flask-WTF** for forms, validation and CSRF protection
 - **Pico.css** (CDN) for styling
 - **pytest** for tests, **gunicorn** for production (`wsgi.py` is the entry point)
@@ -30,7 +30,7 @@ Keep it simple. This is a small app for a handful of people, not a platform.
 - **Validate at the boundary.** Use WTForms for user input, and keep length limits in sync with the model columns.
 - **Keep CSRF on.** Every POST form needs the token, including HTMX forms. Don't exempt routes from `CSRFProtect`.
 - **Config via environment.** `JULKNYT_SECRET_KEY` and `JULKNYT_DATABASE_URL` come from env vars; no secrets in code.
-- **Small, reversible steps.** Prefer boring, minimal solutions over new abstractions. If the schema needs to change, introduce Flask-Migrate first instead of editing the models and hoping `create_all()` copes.
+- **Small, reversible steps.** Prefer boring, minimal solutions over new abstractions. If the schema needs to change, add a Flask-Migrate migration (`flask --app wsgi db migrate`), review it and commit it with the model change.
 - **Test behavior.** Add a pytest test for each new route or rule. Tests use an in-memory SQLite DB with CSRF disabled (see `tests/test_app.py`).
 
 ## Limits for the agent

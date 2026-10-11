@@ -1,11 +1,13 @@
 import os
 
 from flask import Flask, render_template
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFError, CSRFProtect
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
+migrate = Migrate()
 
 DEV_SECRET_KEY = "dev-only-change-me"
 
@@ -62,6 +64,9 @@ def create_app(test_config=None):
 
     db.init_app(app)
     csrf.init_app(app)
+    # The schema is managed by migrations (flask --app wsgi db upgrade), not create_all().
+    migrations_dir = os.path.join(os.path.dirname(app.root_path), "migrations")
+    migrate.init_app(app, db, directory=migrations_dir)
 
     from .format import sv_date
     from .models import CATEGORIES, CATEGORY_LABELS, NAME_MAX, THEME_PICO_MODES
@@ -75,8 +80,5 @@ def create_app(test_config=None):
     app.jinja_env.globals["THEME_PICO_MODES"] = THEME_PICO_MODES
 
     _register_error_handlers(app)
-
-    with app.app_context():
-        db.create_all()
 
     return app

@@ -2,7 +2,10 @@ import re
 from datetime import date
 
 import pytest
-from sqlalchemy import text
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
+from flask_migrate import upgrade
+from sqlalchemy import inspect, text
 from wtforms.validators import Length
 
 from app import create_app, db
@@ -28,6 +31,7 @@ def client():
         }
     )
     with app.test_client() as c, app.app_context():
+        db.create_all()
         yield c
 
 
@@ -36,6 +40,7 @@ def csrf_client():
     """Like `client`, but with CSRF protection left on."""
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite://"})
     with app.test_client() as c, app.app_context():
+        db.create_all()
         yield c
 
 
@@ -522,6 +527,43 @@ def test_htmx_style_csrf_header_is_accepted(csrf_client):
     assert csrf_client.post(url, data=data).status_code == 400
     assert csrf_client.post(url, data=data, headers={"X-CSRFToken": header_token}).status_code == 302
     assert Dish.query.count() == 1
+
+
+# --- migrations --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def migrated_app(tmp_path):
+    """An app whose database was built by `flask db upgrade`, not by create_all()."""
+    app = create_app(
+        {
+            "TESTING": True,
+            "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path / 'migrated.db'}",
+        }
+    )
+    with app.app_context():
+        upgrade()
+        yield app
+
+
+def test_migrations_create_the_tables(migrated_app):
+    tables = set(inspect(db.engine).get_table_names())
+    assert tables == {"event", "dish", "alembic_version"}
+
+
+def test_app_works_on_a_migrated_database(migrated_app):
+    client = migrated_app.test_client()
+    token = make_event(client)
+    add_dish(client, token)
+    assert b"Ham" in client.get(f"/e/{token}").data
+
+
+def test_models_match_the_migrations(migrated_app):
+    # Fails when a model changes without a new migration (flask db migrate).
+    with db.engine.connect() as connection:
+        differences = compare_metadata(MigrationContext.configure(connection), db.metadata)
+    assert differences == []
 
 
 # --- secret key -------------------------------------------------------------------------
