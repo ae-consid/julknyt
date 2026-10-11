@@ -516,22 +516,15 @@ def test_htmx_style_csrf_header_is_accepted(csrf_client):
 
 
 def _app_with_env(monkeypatch, **env):
-    for name in ("JULKNYT_SECRET_KEY", "SECRET_KEY"):
-        monkeypatch.delenv(name, raising=False)
+    monkeypatch.delenv("JULKNYT_SECRET_KEY", raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     return create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://"})
 
 
 def test_refuses_to_start_without_secret_key(monkeypatch):
-    with pytest.raises(RuntimeError, match="JULKNYT_SECRET_KEY is not set") as error:
+    with pytest.raises(RuntimeError, match="JULKNYT_SECRET_KEY is not set"):
         _app_with_env(monkeypatch)
-    assert "no longer read" not in str(error.value)
-
-
-def test_error_mentions_old_variable_name(monkeypatch):
-    with pytest.raises(RuntimeError, match="rename it to JULKNYT_SECRET_KEY"):
-        _app_with_env(monkeypatch, SECRET_KEY="old")
 
 
 def test_starts_when_secret_key_set(monkeypatch):

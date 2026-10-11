@@ -14,15 +14,10 @@ def _require_secret_key(app):
     """Refuse to run with the public development key outside debug mode and tests."""
     if app.config["SECRET_KEY"] != DEV_SECRET_KEY or app.debug or app.testing:
         return
-    hint = (
-        " The old SECRET_KEY variable is no longer read; rename it to JULKNYT_SECRET_KEY."
-        if "SECRET_KEY" in os.environ
-        else ""
-    )
     raise RuntimeError(
         "JULKNYT_SECRET_KEY is not set. Without it sessions and CSRF tokens can be forged, "
         "so the app will not start outside debug mode. Set JULKNYT_SECRET_KEY to a random "
-        f"value (see the README).{hint}"
+        "value (see the README). The old SECRET_KEY variable is no longer read."
     )
 
 
