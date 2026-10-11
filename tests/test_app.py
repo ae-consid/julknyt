@@ -464,6 +464,15 @@ def test_cdn_assets_are_pinned_with_integrity_hashes(client):
         assert 'crossorigin="anonymous"' in tag
 
 
+def test_claim_input_has_the_name_length_limit(client):
+    token = make_event(client)
+    add_dish(client, token)
+    page = client.get(f"/e/{token}").get_data(as_text=True)
+    claim_form = re.search(r'<form class="form-claim".*?</form>', page, re.S).group(0)
+    limit = Dish.claimed_by.type.length
+    assert f'<input name="name" placeholder="Ditt namn" required maxlength="{limit}">' in claim_form
+
+
 def test_dish_forms_use_the_same_url_for_post_and_htmx(client):
     token = make_event(client)
     dish = add_dish(client, token)

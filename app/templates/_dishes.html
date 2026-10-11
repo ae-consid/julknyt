@@ -20,7 +20,7 @@
               {% endcall %}
             {% else %}
               {% call m.dish_form('main.claim', event, dish, 'form-claim') %}
-                <input name="name" placeholder="Ditt namn" required>
+                <input name="name" placeholder="Ditt namn" required maxlength="{{ NAME_MAX }}">
                 <button type="submit">Jag tar med den</button>
               {% endcall %}
               {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
