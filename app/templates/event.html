@@ -5,7 +5,7 @@
   <h1>{{ event.title }}</h1>
   <p>{{ event.date | sv_date }}{% if event.location %} · {{ event.location }}{% endif %} · värd: {{ event.host_name }}</p>
 </hgroup>
-<p><small>Dela länken till den här sidan med dina gäster.</small></p>
+<p><small>Dela länken till den här sidan med dina gäster. Alla som har länken kan ändra listan.</small></p>
 
 <section id="dishes">{% include "_dishes.html" %}</section>
 

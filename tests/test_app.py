@@ -466,6 +466,7 @@ def test_pages_are_swedish(client):
     assert "torsdag 24 december 2026" in page
     assert "värd: Anton" in page
     assert "Inga rätter än" in page
+    assert "Alla som har länken kan ändra listan" in page
 
 
 def test_category_label_is_swedish_but_stored_key_is_english(client):

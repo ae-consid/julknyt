@@ -94,6 +94,8 @@ Open <http://127.0.0.1:5000>. Stop the server with `Ctrl+C`. If port 5000 is alr
 2. Share the event page's link with your guests. Anyone with the link can open it.
 3. Guests add dishes, claim them with their name, or unclaim and remove them.
 
+There are no user accounts: the link is the only access control. **Anyone who has it can change the list, including unclaiming and removing other guests' dishes**, so share it only with people you trust, and treat it like a password.
+
 The user interface is in Swedish.
 
 ### Running in production (Linux)
@@ -105,6 +107,15 @@ gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app
 
 - Put a reverse proxy such as nginx in front of it, or run it as a `systemd` service so it restarts on boot.
 - Gunicorn does not run on native Windows. Use the development server there, or WSL or Docker.
+- **Logs contain the event links.** The event link (`/e/<token>`) is the only credential, so anyone who can read an access log can open and change every event in it. Gunicorn's access log is off by default, so don't enable it (`--access-logfile`). In nginx, mask the token in the log format (`$request` and `$request_uri` contain it):
+
+  ```nginx
+  map $uri $logged_uri { ~^/e/ "/e/[token]"; default $uri; }
+  log_format masked '$remote_addr "$request_method $logged_uri" $status';
+  access_log /var/log/nginx/julknyt.log masked;
+  ```
+
+  Also restrict read access to the log files and rotate them. The development server prints every URL to the terminal, so don't share its output.
 - To let guests reach the app from outside your network, use a tunnel such as Cloudflare Tunnel or Tailscale instead of opening router ports.
 
 ## Test
