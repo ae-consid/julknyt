@@ -6,6 +6,7 @@ from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from flask_migrate import upgrade
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 from wtforms.validators import Length
 
 from app import create_app, db
@@ -15,6 +16,7 @@ from app.models import THEME_PICO_MODES, Dish, Event
 
 HTMX = {"HX-Request": "true"}
 REQUIRED = "Det här fältet är obligatoriskt"
+LOST_RACE = "Rätten hann bokas av någon annan."
 EVENT_DATA = {"title": "Julbord", "date": "2026-12-24", "host_name": "Anton"}
 
 
@@ -132,8 +134,30 @@ def test_claim_does_not_overwrite_a_claim_made_in_the_meantime(client):
     db.session.connection().execute(
         text("UPDATE dish SET claimed_by = 'Eve' WHERE id = :id"), {"id": dish.id}
     )
-    claim(client, token, dish, "Sara")
+    resp = claim(client, token, dish, "Sara")
     assert claimed_by(dish) == "Eve"
+    assert LOST_RACE in resp.get_data(as_text=True)
+
+
+def test_losing_a_claim_race_shows_the_message_with_htmx_too(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    assert dish.claimed_by is None
+    db.session.connection().execute(
+        text("UPDATE dish SET claimed_by = 'Eve' WHERE id = :id"), {"id": dish.id}
+    )
+    resp = client.post(
+        f"/e/{token}/dishes/{dish.id}/claim", data={"name": "Sara"}, headers=HTMX
+    )
+    page = resp.get_data(as_text=True)
+    assert LOST_RACE in page and "Eve" in page and "<html" not in page
+
+
+def test_successful_claim_shows_no_error(client):
+    token = make_event(client)
+    dish = add_dish(client, token)
+    resp = claim(client, token, dish, "Sara")
+    assert LOST_RACE not in resp.get_data(as_text=True)
 
 
 def test_unclaim_dish(client):
@@ -476,6 +500,29 @@ def test_category_label_is_swedish_but_stored_key_is_english(client):
     page = client.get(f"/e/{token}").get_data(as_text=True)
     assert "Huvudrätt" in page
     assert ">Main<" not in page
+
+
+def test_server_error_page_is_swedish(monkeypatch):
+    app = create_app(
+        {
+            "TESTING": True,
+            "PROPAGATE_EXCEPTIONS": False,  # let the 500 handler answer instead of the test client
+            "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite://",
+        }
+    )
+    with app.test_client() as c, app.app_context():
+        db.create_all()
+
+        def failing_commit():
+            raise OperationalError("COMMIT", {}, Exception("database is locked"))
+
+        monkeypatch.setattr(db.session, "commit", failing_commit)
+        resp = c.post("/", data=EVENT_DATA)
+    assert resp.status_code == 500
+    page = resp.get_data(as_text=True)
+    assert "Något gick fel hos oss" in page
+    assert "Internal Server Error" not in page
 
 
 def test_not_found_page_is_swedish(client):

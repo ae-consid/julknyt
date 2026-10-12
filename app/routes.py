@@ -121,7 +121,12 @@ def claim(token, dish_id):
     form = ClaimForm()
     if not form.validate_on_submit():
         return _dish_response(event, claim_errors={dish.id: form.name.errors})
-    dish.claim(form.name.data)
+    claimed = dish.claim(form.name.data)
+    db.session.commit()
+    if not claimed:
+        return _dish_response(
+            event, claim_errors={dish.id: ["Rätten hann bokas av någon annan."]}
+        )
     return _dish_response(event)
 
 

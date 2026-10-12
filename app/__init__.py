@@ -72,6 +72,15 @@ def _register_error_handlers(app):
             400,
         )
 
+    # Flask has already logged the exception by the time this runs.
+    @app.errorhandler(500)
+    def server_error(_error):
+        return _error_page(
+            "Något gick fel",
+            "Något gick fel hos oss. Försök igen om en stund.",
+            500,
+        )
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)

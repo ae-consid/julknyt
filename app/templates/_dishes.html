@@ -23,8 +23,8 @@
                 <input name="name" placeholder="Ditt namn" required maxlength="{{ NAME_MAX }}">
                 <button type="submit">Jag tar med den</button>
               {% endcall %}
-              {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
             {% endif %}
+            {% for err in (claim_errors or {}).get(dish.id, []) %}<small>{{ err }}</small>{% endfor %}
           </td>
           <td class="cell-delete">
             {# Confirm in the page: a native confirm() dialog is not available everywhere. #}

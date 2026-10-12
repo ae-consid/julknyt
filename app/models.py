@@ -65,14 +65,14 @@ class Dish(db.Model):
     claimed_by = db.Column(db.String(NAME_MAX), nullable=True)
 
     def claim(self, name):
-        """Claim the dish for `name` unless someone already has.
+        """Claim the dish for `name` unless someone already has; return whether it worked.
 
         One conditional UPDATE, so two guests claiming at the same moment can't overwrite
-        each other: only the first one matches `claimed_by IS NULL`.
+        each other: only the first one matches `claimed_by IS NULL`. The caller commits.
         """
-        db.session.execute(
+        result = db.session.execute(
             db.update(Dish)
             .where(Dish.id == self.id, Dish.claimed_by.is_(None))
             .values(claimed_by=name)
         )
-        db.session.commit()
+        return result.rowcount == 1
