@@ -48,10 +48,10 @@ The app reads two environment variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `JULKNYT_SECRET_KEY` | an insecure development value | Signs sessions and CSRF tokens. **Set a random value anywhere other than your own machine.** |
+| `JULKNYT_SECRET_KEY` | none (a random key per run in debug mode) | Signs sessions and CSRF tokens. At least 32 characters. **Set a random value anywhere other than your own machine.** |
 | `JULKNYT_DATABASE_URL` | `sqlite:///instance/potluck.db` | Database connection string |
 
-Outside debug mode (`--debug`) and the tests, the app **refuses to start** without `JULKNYT_SECRET_KEY`, because sessions and CSRF tokens could be forged with the built-in development key. For local development, `flask --app wsgi run --debug` works without it.
+Outside debug mode (`--debug`) and the tests, the app **refuses to start** without `JULKNYT_SECRET_KEY`, because sessions and CSRF tokens could otherwise be forged. A key shorter than 32 characters is rejected in every mode. For local development, `flask --app wsgi run --debug` works without it: the app then makes up a random key for that run, so open pages need a reload after the server restarts.
 
 Generate a key:
 

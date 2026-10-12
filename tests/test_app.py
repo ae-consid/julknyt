@@ -582,11 +582,40 @@ def test_refuses_to_start_without_secret_key(monkeypatch):
 
 
 def test_starts_when_secret_key_set(monkeypatch):
-    app = _app_with_env(monkeypatch, JULKNYT_SECRET_KEY="a-real-secret")
-    assert app.config["SECRET_KEY"] == "a-real-secret"
+    key = "a-real-secret-" + "x" * 32
+    app = _app_with_env(monkeypatch, JULKNYT_SECRET_KEY=key)
+    assert app.config["SECRET_KEY"] == key
+
+
+@pytest.mark.parametrize("key", ["", "short", "x" * 31])
+@pytest.mark.parametrize("mode", [{}, {"DEBUG": True}, {"TESTING": True}])
+def test_refuses_a_too_short_secret_key_in_every_mode(monkeypatch, key, mode):
+    monkeypatch.setenv("JULKNYT_SECRET_KEY", key)
+    with pytest.raises(RuntimeError, match="too short"):
+        create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", **mode})
 
 
 def test_starts_without_secret_key_in_debug_or_testing(monkeypatch):
     monkeypatch.delenv("JULKNYT_SECRET_KEY", raising=False)
     create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "DEBUG": True})
     create_app({"SQLALCHEMY_DATABASE_URI": "sqlite://", "TESTING": True})
+
+
+def test_debug_without_secret_key_gets_a_random_key_per_app(monkeypatch):
+    monkeypatch.delenv("JULKNYT_SECRET_KEY", raising=False)
+    config = {"SQLALCHEMY_DATABASE_URI": "sqlite://", "DEBUG": True}
+    first = create_app(config).config["SECRET_KEY"]
+    second = create_app(config).config["SECRET_KEY"]
+    assert len(first) >= 32 and first != second  # no well-known key to forge sessions with
+
+
+# --- security headers -------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("path", ["/", "/e/nope"])  # a normal page and an error page
+def test_security_headers_are_set(client, path):
+    headers = client.get(path).headers
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["X-Frame-Options"] == "DENY"
+    assert headers["Referrer-Policy"] == "same-origin"
+    assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]

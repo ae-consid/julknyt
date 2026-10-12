@@ -1,4 +1,5 @@
 import os
+import secrets
 
 from flask import Flask, render_template
 from flask_migrate import Migrate
@@ -9,18 +10,45 @@ db = SQLAlchemy()
 csrf = CSRFProtect()
 migrate = Migrate()
 
-DEV_SECRET_KEY = "dev-only-change-me"
+MIN_SECRET_KEY_LENGTH = 32
 
 
 def _require_secret_key(app):
-    """Refuse to run with the public development key outside debug mode and tests."""
-    if app.config["SECRET_KEY"] != DEV_SECRET_KEY or app.debug or app.testing:
-        return
-    raise RuntimeError(
-        "JULKNYT_SECRET_KEY is not set. Without it sessions and CSRF tokens can be forged, "
-        "so the app will not start outside debug mode. Set JULKNYT_SECRET_KEY to a random "
-        "value (see the README). The old SECRET_KEY variable is no longer read."
-    )
+    """Make sure the app has a strong secret key.
+
+    Outside debug mode and tests the key must come from JULKNYT_SECRET_KEY. In debug mode and
+    tests a random key is generated for this process instead, so there is no well-known key
+    that could end up in production by mistake (sessions then reset when the server restarts).
+    """
+    key = app.config.get("SECRET_KEY")
+    if key is None:
+        if not (app.debug or app.testing):
+            raise RuntimeError(
+                "JULKNYT_SECRET_KEY is not set. Without it sessions and CSRF tokens can be "
+                "forged, so the app will not start outside debug mode. Set JULKNYT_SECRET_KEY "
+                "to a random value (see the README). The old SECRET_KEY variable is no longer "
+                "read."
+            )
+        app.config["SECRET_KEY"] = secrets.token_hex(32)
+    elif len(key) < MIN_SECRET_KEY_LENGTH:
+        raise RuntimeError(
+            f"JULKNYT_SECRET_KEY is too short: it must be at least {MIN_SECRET_KEY_LENGTH} "
+            "characters. Generate one as described in the README."
+        )
+
+
+def _add_security_headers(app):
+    @app.after_request
+    def set_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        # The event link is the only credential, so keep it out of Referer headers sent to the CDNs.
+        response.headers["Referrer-Policy"] = "same-origin"
+        # Stops the page being framed (clickjacking). X-Frame-Options is for older browsers.
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Content-Security-Policy"] = (
+            "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        )
+        return response
 
 
 def _error_page(title, message, status):
@@ -48,7 +76,7 @@ def _register_error_handlers(app):
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get("JULKNYT_SECRET_KEY", DEV_SECRET_KEY),
+        SECRET_KEY=os.environ.get("JULKNYT_SECRET_KEY"),
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             "JULKNYT_DATABASE_URL", f"sqlite:///{os.path.join(app.instance_path, 'potluck.db')}"
         ),
@@ -80,5 +108,6 @@ def create_app(test_config=None):
     app.jinja_env.globals["THEME_PICO_MODES"] = THEME_PICO_MODES
 
     _register_error_handlers(app)
+    _add_security_headers(app)
 
     return app
