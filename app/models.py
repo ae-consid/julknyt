@@ -29,6 +29,8 @@ DISH_NAME_MAX = 120
 DIETARY_MAX = 120
 CATEGORY_MAX = 20
 THEME_MAX = 20
+# Cap on dishes per event, so a leaked link can't be used to fill the database.
+MAX_DISHES_PER_EVENT = 50
 
 
 def _new_token():
@@ -47,6 +49,10 @@ class Event(db.Model):
     dishes = db.relationship(
         "Dish", backref="event", cascade="all, delete-orphan", order_by="Dish.id"
     )
+
+    @property
+    def is_full(self):
+        return len(self.dishes) >= MAX_DISHES_PER_EVENT
 
 
 class Dish(db.Model):

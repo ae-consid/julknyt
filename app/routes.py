@@ -88,7 +88,11 @@ def show_event(token):
 def add_dish(token):
     event = _get_event(token)
     form = DishForm()
-    if not form.validate_on_submit():
+    valid = form.validate_on_submit()
+    if valid and event.is_full:
+        form.name.errors.append("Evenemanget har redan max antal rätter.")
+        valid = False
+    if not valid:
         if _is_htmx():
             # Swap only the form (with its errors); the dish list stays as it is.
             response = make_response(

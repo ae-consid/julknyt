@@ -303,6 +303,50 @@ def test_add_dish_too_long_name_shows_error(client):
     assert Dish.query.count() == 0
 
 
+FULL = "Evenemanget har redan max antal rätter."
+
+
+@pytest.fixture
+def two_dish_limit(monkeypatch):
+    monkeypatch.setattr("app.models.MAX_DISHES_PER_EVENT", 2)
+
+
+def test_event_with_max_dishes_rejects_another(client, two_dish_limit):
+    token = make_event(client)
+    add_dish(client, token, name="Ham")
+    add_dish(client, token, name="Sill")
+    resp = client.post(f"/e/{token}/dishes", data={"name": "Ost", "category": "Main"})
+    assert resp.status_code == 200
+    assert FULL in resp.get_data(as_text=True)
+    assert Dish.query.count() == 2
+
+
+def test_htmx_add_dish_to_full_event_swaps_only_the_form(client, two_dish_limit):
+    token = make_event(client)
+    add_dish(client, token, name="Ham")
+    add_dish(client, token, name="Sill")
+    resp = client.post(
+        f"/e/{token}/dishes", data={"name": "Ost", "category": "Main"}, headers=HTMX
+    )
+    assert resp.headers["HX-Retarget"] == "#add-dish"
+    page = resp.get_data(as_text=True)
+    assert FULL in page and "<html" not in page
+    assert Dish.query.count() == 2
+
+
+def test_dish_limit_is_per_event_and_frees_up_on_delete(client, two_dish_limit):
+    full = make_event(client)
+    other = make_event(client)
+    first = add_dish(client, full, name="Ham")
+    add_dish(client, full, name="Sill")
+    add_dish(client, other, name="Ost")  # another event is not affected
+    assert Dish.query.count() == 3
+
+    client.post(f"/e/{full}/dishes/{first.id}/delete")
+    client.post(f"/e/{full}/dishes", data={"name": "Kaviar", "category": "Main"})
+    assert Dish.query.filter_by(name="Kaviar").count() == 1
+
+
 def test_htmx_add_dish_success_swaps_in_a_fresh_form(client):
     token = make_event(client)
     resp = client.post(
