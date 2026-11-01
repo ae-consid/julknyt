@@ -1,10 +1,30 @@
-from flask import Blueprint, abort, make_response, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from sqlalchemy.exc import SQLAlchemyError
 
 from . import db
 from .forms import ClaimForm, DishForm, EventForm
 from .models import Dish, Event
 
 bp = Blueprint("main", __name__)
+
+
+def _commit():
+    """Commit, or answer 503 if the database can't take it (e.g. SQLite is locked)."""
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Database commit failed")
+        abort(503)
 
 
 def _get_event(token):
@@ -72,7 +92,7 @@ def index():
             theme=form.theme.data,
         )
         db.session.add(event)
-        db.session.commit()
+        _commit()
         return redirect(url_for("main.event", token=event.token))
     return render_template("index.html", form=form, theme=form.theme.data)
 
@@ -111,7 +131,7 @@ def add_dish(token):
             claimed_by=form.claimed_by.data or None,
         )
     )
-    db.session.commit()
+    _commit()
     return _dish_response(event, fresh_form=True)
 
 
@@ -122,7 +142,7 @@ def claim(token, dish_id):
     if not form.validate_on_submit():
         return _dish_response(event, claim_errors={dish.id: form.name.errors})
     claimed = dish.claim(form.name.data)
-    db.session.commit()
+    _commit()
     if not claimed:
         return _dish_response(
             event, claim_errors={dish.id: ["Rätten hann bokas av någon annan."]}
@@ -134,7 +154,7 @@ def claim(token, dish_id):
 def unclaim(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     dish.claimed_by = None
-    db.session.commit()
+    _commit()
     return _dish_response(event)
 
 
@@ -142,5 +162,5 @@ def unclaim(token, dish_id):
 def delete(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     db.session.delete(dish)
-    db.session.commit()
+    _commit()
     return _dish_response(event)

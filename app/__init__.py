@@ -73,6 +73,14 @@ def _register_error_handlers(app):
             400,
         )
 
+    @app.errorhandler(503)
+    def database_busy(_error):
+        return _error_page(
+            "Databasen är upptagen",
+            "Ändringen sparades inte. Försök igen om en stund.",
+            503,
+        )
+
     # Flask has already logged the exception by the time this runs.
     @app.errorhandler(500)
     def server_error(_error):

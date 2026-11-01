@@ -516,7 +516,7 @@ def test_server_error_page_is_swedish(monkeypatch):
         db.create_all()
 
         def failing_commit():
-            raise OperationalError("COMMIT", {}, Exception("database is locked"))
+            raise RuntimeError("unexpected")
 
         monkeypatch.setattr(db.session, "commit", failing_commit)
         resp = c.post("/", data=EVENT_DATA)
@@ -524,6 +524,31 @@ def test_server_error_page_is_swedish(monkeypatch):
     page = resp.get_data(as_text=True)
     assert "Något gick fel hos oss" in page
     assert "Internal Server Error" not in page
+
+
+def test_failed_commit_gives_a_swedish_503_and_saves_nothing(client, monkeypatch):
+    token = make_event(client)
+    dish = add_dish(client, token)
+
+    def locked_commit():
+        raise OperationalError("COMMIT", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(db.session, "commit", locked_commit)
+    for path, data in [
+        ("/", EVENT_DATA),
+        (f"/e/{token}/dishes", {"name": "Sill", "category": "Main"}),
+        (f"/e/{token}/dishes/{dish.id}/claim", {"name": "Eva"}),
+        (f"/e/{token}/dishes/{dish.id}/unclaim", {}),
+        (f"/e/{token}/dishes/{dish.id}/delete", {}),
+    ]:
+        resp = client.post(path, data=data)
+        assert resp.status_code == 503, path
+        page = resp.get_data(as_text=True)
+        assert "Databasen är upptagen" in page
+        assert "Internal Server Error" not in page
+    monkeypatch.undo()
+    assert Dish.query.count() == 1
+    assert claimed_by(dish) is None
 
 
 def test_not_found_page_is_swedish(client):
