@@ -551,6 +551,52 @@ def test_failed_commit_gives_a_swedish_503_and_saves_nothing(client, monkeypatch
     assert claimed_by(dish) is None
 
 
+def test_htmx_error_is_a_message_aimed_at_the_error_box(client):
+    token = make_event(client)
+    resp = client.post(f"/e/{token}/dishes/999/delete", headers=HTMX)
+    assert resp.status_code == 404
+    assert resp.headers["HX-Retarget"] == "#htmx-error"
+    assert resp.headers["HX-Reswap"] == "innerHTML"
+    page = resp.get_data(as_text=True)
+    assert "Det du försökte ändra finns inte längre" in page
+    assert "<html" not in page
+
+
+def test_plain_post_error_is_still_a_full_page(client):
+    token = make_event(client)
+    resp = client.post(f"/e/{token}/dishes/999/delete")
+    assert resp.status_code == 404
+    assert "HX-Retarget" not in resp.headers
+    assert "<html" in resp.get_data(as_text=True)
+
+
+def test_htmx_csrf_error_is_a_message_aimed_at_the_error_box(csrf_client):
+    resp = csrf_client.post("/", headers=HTMX)
+    assert resp.status_code == 400
+    assert resp.headers["HX-Retarget"] == "#htmx-error"
+    assert "Ladda om sidan" in resp.get_data(as_text=True)
+
+
+def test_htmx_database_error_is_a_message_aimed_at_the_error_box(client, monkeypatch):
+    token = make_event(client)
+
+    def locked_commit():
+        raise OperationalError("COMMIT", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(db.session, "commit", locked_commit)
+    resp = client.post(f"/e/{token}/dishes", data={"name": "Sill", "category": "Main"}, headers=HTMX)
+    assert resp.status_code == 503
+    assert resp.headers["HX-Retarget"] == "#htmx-error"
+    assert "Ändringen sparades inte" in resp.get_data(as_text=True)
+
+
+def test_pages_let_htmx_swap_error_responses(client):
+    page = client.get("/").get_data(as_text=True)
+    assert 'id="htmx-error"' in page
+    assert 'name="htmx-config"' in page
+    assert '"code": "[45]..", "swap": true' in page
+
+
 def test_not_found_page_is_swedish(client):
     resp = client.get("/e/nope")
     assert resp.status_code == 404

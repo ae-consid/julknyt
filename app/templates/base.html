@@ -4,6 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# HTMX ignores 4xx/5xx responses by default. Swap them too: the server answers HTMX requests
+     with a short message aimed at #htmx-error (see _error_page in __init__.py). #}
+  <meta name="htmx-config" content='{"responseHandling": [
+    {"code": "204", "swap": false},
+    {"code": "[23]..", "swap": true},
+    {"code": "[45]..", "swap": true, "error": true},
+    {"code": "...", "swap": false}
+  ]}'>
   <title>{% block title %}Julknyt{% endblock %}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
         integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU"
@@ -19,6 +27,7 @@
       <ul><li><a href="{{ url_for('main.index') }}"><strong><span class="brand-tree">🎄</span><span class="brand-pumpkin">🎃</span> Julknyt</strong></a></li></ul>
     </nav>
   </header>
+  <div id="htmx-error" role="alert"></div>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
@@ -26,5 +35,11 @@
     <p class="footer-christmas">🎁 God Jul! ❄️</p>
     <p class="footer-halloween">🦇 Glad Halloween! 🎃 Bu! 👻</p>
   </footer>
+  <script>
+    // Clear an old error message when the next HTMX request starts.
+    document.body.addEventListener("htmx:beforeRequest", function () {
+      document.getElementById("htmx-error").replaceChildren();
+    });
+  </script>
 </body>
 </html>

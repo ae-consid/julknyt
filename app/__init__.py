@@ -2,7 +2,7 @@ import os
 import secrets
 
 import click
-from flask import Flask, render_template
+from flask import Flask, make_response, render_template, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFError, CSRFProtect
@@ -53,7 +53,15 @@ def _add_security_headers(app):
         return response
 
 
-def _error_page(title, message, status):
+def _error_page(title, message, status, htmx_message=None):
+    """Full error page, or for HTMX requests a short message swapped into #htmx-error."""
+    if request.headers.get("HX-Request"):
+        response = make_response(
+            render_template("_htmx_error.html", message=htmx_message or message), status
+        )
+        response.headers["HX-Retarget"] = "#htmx-error"
+        response.headers["HX-Reswap"] = "innerHTML"
+        return response
     return render_template("error.html", title=title, message=message), status
 
 
@@ -64,6 +72,7 @@ def _register_error_handlers(app):
             "Sidan hittades inte",
             "Länken verkar vara fel eller så har evenemanget tagits bort.",
             404,
+            htmx_message="Det du försökte ändra finns inte längre. Ladda om sidan.",
         )
 
     @app.errorhandler(CSRFError)
