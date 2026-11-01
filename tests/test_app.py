@@ -3,6 +3,7 @@ from datetime import date, timedelta
 
 import pytest
 from alembic.autogenerate import compare_metadata
+from flask import abort
 from alembic.migration import MigrationContext
 from flask_migrate import upgrade
 from sqlalchemy import inspect, text
@@ -580,6 +581,43 @@ def test_plain_post_error_is_still_a_full_page(client):
     assert resp.status_code == 404
     assert "HX-Retarget" not in resp.headers
     assert "<html" in resp.get_data(as_text=True)
+
+
+def test_wrong_method_gives_a_swedish_405_with_allow_header(client):
+    token = make_event(client)
+    for method, path, allowed in [
+        ("get", f"/e/{token}/dishes", "POST"),
+        ("post", f"/e/{token}", "GET"),
+    ]:
+        resp = getattr(client, method)(path)
+        assert resp.status_code == 405, path
+        page = resp.get_data(as_text=True)
+        assert "Metoden stöds inte" in page
+        assert "Method Not Allowed" not in page
+        assert allowed in resp.headers["Allow"]
+
+
+def test_htmx_wrong_method_is_a_message_aimed_at_the_error_box(client):
+    token = make_event(client)
+    resp = client.get(f"/e/{token}/dishes", headers=HTMX)
+    assert resp.status_code == 405
+    assert resp.headers["HX-Retarget"] == "#htmx-error"
+    assert "<html" not in resp.get_data(as_text=True)
+    assert "POST" in resp.headers["Allow"]
+
+
+def test_bad_request_gives_a_swedish_400_page():
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite://"})
+
+    @app.get("/bad")
+    def bad():
+        abort(400)
+
+    resp = app.test_client().get("/bad")
+    assert resp.status_code == 400
+    page = resp.get_data(as_text=True)
+    assert "Ogiltig förfrågan" in page
+    assert "Bad Request" not in page
 
 
 def test_htmx_csrf_error_is_a_message_aimed_at_the_error_box(csrf_client):

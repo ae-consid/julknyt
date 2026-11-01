@@ -75,6 +75,28 @@ def _register_error_handlers(app):
             htmx_message="Det du försökte ändra finns inte längre. Ladda om sidan.",
         )
 
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        response = make_response(
+            _error_page(
+                "Metoden stöds inte",
+                "Den här sidan kan inte öppnas på det sättet. Gå till startsidan och försök igen.",
+                405,
+            )
+        )
+        # Werkzeug's own 405 response carries Allow; keep it, as HTTP requires.
+        response.headers["Allow"] = ", ".join(error.valid_methods or [])
+        return response
+
+    # CSRFError is a BadRequest too, but Flask picks the more specific handler below.
+    @app.errorhandler(400)
+    def bad_request(_error):
+        return _error_page(
+            "Ogiltig förfrågan",
+            "Förfrågan gick inte att tolka. Ladda om sidan och försök igen.",
+            400,
+        )
+
     @app.errorhandler(CSRFError)
     def csrf_error(_error):
         return _error_page(
