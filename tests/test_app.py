@@ -22,7 +22,7 @@ LOST_RACE = "Rätten hann bokas av någon annan."
 EVENT_DATA = {
     "title": "Julbord",
     "date": (date.today() + timedelta(days=30)).isoformat(),
-    "host_name": "Anton",
+    "host_name": "julknyt-test",
 }
 
 
@@ -61,7 +61,7 @@ def make_event(client, **overrides):
 
 def make_event_in_db(day, title="Julbord"):
     """Create an event directly, for dates the form refuses (past events waiting to be purged)."""
-    event = Event(title=title, date=day, host_name="Anton")
+    event = Event(title=title, date=day, host_name="julknyt-test")
     db.session.add(event)
     db.session.commit()
     return event.token
@@ -108,9 +108,9 @@ def test_dish_scoped_to_event(client):
 
 
 def test_event_fields_are_trimmed_and_empty_location_is_empty_string(client):
-    token = make_event(client, title="  Julbord  ", host_name="  Anton ", location="  Hemma ")
+    token = make_event(client, title="  Julbord  ", host_name="  julknyt-test ", location="  Hemma ")
     event = Event.query.filter_by(token=token).one()
-    assert (event.title, event.host_name, event.location) == ("Julbord", "Anton", "Hemma")
+    assert (event.title, event.host_name, event.location) == ("Julbord", "julknyt-test", "Hemma")
 
     other = Event.query.filter_by(token=make_event(client, location="")).one()
     assert other.location == ""
@@ -502,7 +502,7 @@ def test_pages_are_swedish(client):
     token = make_event(client)
     page = client.get(f"/e/{token}").get_data(as_text=True)
     assert sv_date(date.today() + timedelta(days=30)) in page
-    assert "värd: Anton" in page
+    assert "värd: julknyt-test" in page
     assert "Inga rätter än" in page
     assert "Alla som har länken kan ändra listan" in page
 
