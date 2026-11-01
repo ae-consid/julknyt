@@ -21,7 +21,10 @@ Keep it simple. This is a small app for a handful of people, not a platform.
 ```bash
 .venv\Scripts\flask --app wsgi run --debug   # dev server
 .venv\Scripts\python -m pytest -q            # tests
+.venv\Scripts\flask --app wsgi purge-events  # delete events 7+ days past their date
 ```
+
+`purge-events` should be run daily by a scheduler (e.g. the PythonAnywhere Tasks tab); the app doesn't run it itself.
 
 ## Architectural principles
 - **Server-rendered first.** Return HTML, not JSON. HTMX requests (`HX-Request` header) get the `_dishes.html` partial; plain form posts redirect, so the app works without JavaScript.

@@ -10,6 +10,7 @@ from sqlalchemy.exc import OperationalError
 from wtforms.validators import Length
 
 from app import create_app, db
+from app.cleanup import delete_expired_events
 from app.format import sv_date
 from app.forms import DishForm, EventForm
 from app.models import THEME_PICO_MODES, Dish, Event
@@ -699,6 +700,41 @@ def test_debug_without_secret_key_gets_a_random_key_per_app(monkeypatch):
     first = create_app(config).config["SECRET_KEY"]
     second = create_app(config).config["SECRET_KEY"]
     assert len(first) >= 32 and first != second  # no well-known key to forge sessions with
+
+
+# --- cleanup of old events --------------------------------------------------------------
+
+
+def test_delete_expired_events_removes_old_events_and_their_dishes(client):
+    old = make_event(client, date="2026-12-24")
+    add_dish(client, old)
+    kept = {
+        d: make_event(client, title=f"Event {d}", date=d)
+        for d in ["2026-12-26", "2026-12-31", "2027-01-05"]
+    }
+    add_dish(client, kept["2026-12-26"], name="Skinka")
+
+    # 2026-12-24 is exactly 7 days before; 12-26 is only 5 days before.
+    assert delete_expired_events(today=date(2026, 12, 31)) == 1
+
+    assert Event.query.filter_by(token=old).first() is None
+    assert Dish.query.filter_by(name="Ham").first() is None  # no orphaned dishes
+    assert {e.token for e in Event.query.all()} == set(kept.values())
+    assert Dish.query.filter_by(name="Skinka").count() == 1
+
+
+def test_delete_expired_events_keeps_events_less_than_7_days_old(client):
+    make_event(client, date="2026-12-25")
+    assert delete_expired_events(today=date(2026, 12, 31)) == 0
+    assert Event.query.count() == 1
+
+
+def test_purge_events_command_reports_the_count(client):
+    make_event(client, date="2000-01-01")
+    result = client.application.test_cli_runner().invoke(args=["purge-events"])
+    assert result.exit_code == 0
+    assert "Tog bort 1 gamla evenemang." in result.output
+    assert Event.query.count() == 0
 
 
 # --- security headers -------------------------------------------------------------------

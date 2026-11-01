@@ -1,6 +1,7 @@
 import os
 import secrets
 
+import click
 from flask import Flask, render_template
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -82,6 +83,16 @@ def _register_error_handlers(app):
         )
 
 
+def _register_cli(app):
+    @app.cli.command("purge-events")
+    def purge_events():
+        """Delete events that are 7 or more days past their date."""
+        from .cleanup import delete_expired_events
+
+        count = delete_expired_events()
+        click.echo(f"Tog bort {count} gamla evenemang.")
+
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -118,5 +129,6 @@ def create_app(test_config=None):
 
     _register_error_handlers(app)
     _add_security_headers(app)
+    _register_cli(app)
 
     return app
