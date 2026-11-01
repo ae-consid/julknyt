@@ -16,6 +16,11 @@ from .models import Dish, Event
 
 bp = Blueprint("main", __name__)
 
+# Ids above this never exist. Without a cap Flask accepts any number of digits, and SQLite
+# raises OverflowError (a 500) for integers above 2**63 - 1; with it they are a plain 404.
+MAX_DISH_ID = 2**31 - 1
+DISH_ID = f"<int(max={MAX_DISH_ID}):dish_id>"
+
 
 def _commit():
     """Commit, or answer 503 if the database can't take it (e.g. SQLite is locked)."""
@@ -135,7 +140,7 @@ def add_dish(token):
     return _dish_response(event, fresh_form=True)
 
 
-@bp.post("/e/<token>/dishes/<int:dish_id>/claim")
+@bp.post("/e/<token>/dishes/" + DISH_ID + "/claim")
 def claim(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     form = ClaimForm()
@@ -150,7 +155,7 @@ def claim(token, dish_id):
     return _dish_response(event)
 
 
-@bp.post("/e/<token>/dishes/<int:dish_id>/unclaim")
+@bp.post("/e/<token>/dishes/" + DISH_ID + "/unclaim")
 def unclaim(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     dish.claimed_by = None
@@ -158,7 +163,7 @@ def unclaim(token, dish_id):
     return _dish_response(event)
 
 
-@bp.post("/e/<token>/dishes/<int:dish_id>/delete")
+@bp.post("/e/<token>/dishes/" + DISH_ID + "/delete")
 def delete(token, dish_id):
     event, dish = _get_dish(token, dish_id)
     db.session.delete(dish)

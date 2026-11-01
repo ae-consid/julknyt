@@ -597,6 +597,19 @@ def test_pages_let_htmx_swap_error_responses(client):
     assert '"code": "[45]..", "swap": true' in page
 
 
+@pytest.mark.parametrize("action", ["claim", "unclaim", "delete"])
+@pytest.mark.parametrize("dish_id", [99999999999999999999, 2**31, 2**31 - 1])
+def test_oversized_dish_id_is_a_404_not_a_500(client, action, dish_id):
+    token = make_event(client)
+    data = {"name": "Eva"}
+    plain = client.post(f"/e/{token}/dishes/{dish_id}/{action}", data=data)
+    assert plain.status_code == 404
+    assert "Sidan hittades inte" in plain.get_data(as_text=True)
+    htmx = client.post(f"/e/{token}/dishes/{dish_id}/{action}", data=data, headers=HTMX)
+    assert htmx.status_code == 404
+    assert htmx.headers["HX-Retarget"] == "#htmx-error"
+
+
 def test_not_found_page_is_swedish(client):
     resp = client.get("/e/nope")
     assert resp.status_code == 404
