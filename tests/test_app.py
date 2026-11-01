@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from alembic.autogenerate import compare_metadata
@@ -18,7 +18,11 @@ from app.models import THEME_PICO_MODES, Dish, Event
 HTMX = {"HX-Request": "true"}
 REQUIRED = "Det här fältet är obligatoriskt"
 LOST_RACE = "Rätten hann bokas av någon annan."
-EVENT_DATA = {"title": "Julbord", "date": "2026-12-24", "host_name": "Anton"}
+EVENT_DATA = {
+    "title": "Julbord",
+    "date": (date.today() + timedelta(days=30)).isoformat(),
+    "host_name": "Anton",
+}
 
 
 # --- fixtures and helpers ----------------------------------------------------------------
@@ -52,6 +56,14 @@ def make_event(client, **overrides):
     resp = client.post("/", data=data)
     assert resp.status_code == 302
     return re.search(r"/e/([\w-]+)", resp.headers["Location"]).group(1)
+
+
+def make_event_in_db(day, title="Julbord"):
+    """Create an event directly, for dates the form refuses (past events waiting to be purged)."""
+    event = Event(title=title, date=day, host_name="Anton")
+    db.session.add(event)
+    db.session.commit()
+    return event.token
 
 
 def add_dish(client, token, name="Ham", category="Main"):
@@ -488,7 +500,7 @@ def test_pages_are_swedish(client):
 
     token = make_event(client)
     page = client.get(f"/e/{token}").get_data(as_text=True)
-    assert "torsdag 24 december 2026" in page
+    assert sv_date(date.today() + timedelta(days=30)) in page
     assert "värd: Anton" in page
     assert "Inga rätter än" in page
     assert "Alla som har länken kan ändra listan" in page
@@ -786,14 +798,49 @@ def test_debug_without_secret_key_gets_a_random_key_per_app(monkeypatch):
     assert len(first) >= 32 and first != second  # no well-known key to forge sessions with
 
 
+# --- event date limits ------------------------------------------------------------------
+
+
+def post_event_on(client, day):
+    return client.post("/", data={**EVENT_DATA, "date": day.isoformat()})
+
+
+def test_event_date_today_is_accepted(client):
+    assert post_event_on(client, date.today()).status_code == 302
+
+
+def test_event_date_in_the_past_is_rejected(client):
+    resp = post_event_on(client, date.today() - timedelta(days=1))
+    assert resp.status_code == 200
+    assert "Datumet kan inte ligga i det förflutna." in resp.get_data(as_text=True)
+    assert Event.query.count() == 0
+
+
+def test_event_date_up_to_a_year_ahead_is_accepted(client):
+    assert post_event_on(client, date.today() + timedelta(days=365)).status_code == 302
+
+
+def test_event_date_more_than_a_year_ahead_is_rejected(client):
+    resp = post_event_on(client, date.today() + timedelta(days=366))
+    assert resp.status_code == 200
+    assert "Datumet kan inte vara mer än ett år fram i tiden." in resp.get_data(as_text=True)
+    assert Event.query.count() == 0
+
+
+def test_an_event_created_for_today_is_not_purged(client):
+    post_event_on(client, date.today())
+    assert delete_expired_events() == 0
+    assert Event.query.count() == 1
+
+
 # --- cleanup of old events --------------------------------------------------------------
 
 
 def test_delete_expired_events_removes_old_events_and_their_dishes(client):
-    old = make_event(client, date="2026-12-24")
+    old = make_event_in_db(date(2026, 12, 24))
     add_dish(client, old)
     kept = {
-        d: make_event(client, title=f"Event {d}", date=d)
+        d: make_event_in_db(date.fromisoformat(d), title=f"Event {d}")
         for d in ["2026-12-26", "2026-12-31", "2027-01-05"]
     }
     add_dish(client, kept["2026-12-26"], name="Skinka")
@@ -808,13 +855,13 @@ def test_delete_expired_events_removes_old_events_and_their_dishes(client):
 
 
 def test_delete_expired_events_keeps_events_less_than_7_days_old(client):
-    make_event(client, date="2026-12-25")
+    make_event_in_db(date(2026, 12, 25))
     assert delete_expired_events(today=date(2026, 12, 31)) == 0
     assert Event.query.count() == 1
 
 
 def test_purge_events_command_reports_the_count(client):
-    make_event(client, date="2000-01-01")
+    make_event_in_db(date(2000, 1, 1))
     result = client.application.test_cli_runner().invoke(args=["purge-events"])
     assert result.exit_code == 0
     assert "Tog bort 1 gamla evenemang." in result.output
@@ -822,7 +869,7 @@ def test_purge_events_command_reports_the_count(client):
 
 
 def test_purge_events_command_fails_cleanly_when_the_commit_fails(client, monkeypatch):
-    token = make_event(client, date="2000-01-01")
+    token = make_event_in_db(date(2000, 1, 1))
     add_dish(client, token)
 
     def locked_commit():
