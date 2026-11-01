@@ -602,6 +602,39 @@ def test_htmx_database_error_is_a_message_aimed_at_the_error_box(client, monkeyp
     assert "Ändringen sparades inte" in resp.get_data(as_text=True)
 
 
+def test_database_error_while_claiming_gives_a_swedish_503(client, monkeypatch):
+    token = make_event(client)
+    dish = add_dish(client, token)
+
+    def locked_execute(*args, **kwargs):
+        raise OperationalError("UPDATE", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(db.session, "execute", locked_execute)
+    resp = client.post(f"/e/{token}/dishes/{dish.id}/claim", data={"name": "Eva"})
+    assert resp.status_code == 503
+    assert "Databasen är upptagen" in resp.get_data(as_text=True)
+    monkeypatch.undo()
+    assert claimed_by(dish) is None
+
+
+def test_database_error_while_reading_gives_a_swedish_503(client, monkeypatch):
+    token = make_event(client)
+
+    def locked_get(*args, **kwargs):
+        raise OperationalError("SELECT", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(db.session, "get", locked_get)
+    dish_path = f"/e/{token}/dishes/1/delete"
+    resp = client.post(dish_path)
+    assert resp.status_code == 503
+    assert "Databasen är upptagen" in resp.get_data(as_text=True)
+
+    htmx_resp = client.post(dish_path, headers=HTMX)
+    assert htmx_resp.status_code == 503
+    assert htmx_resp.headers["HX-Retarget"] == "#htmx-error"
+    assert "<html" not in htmx_resp.get_data(as_text=True)
+
+
 def test_pages_let_htmx_swap_error_responses(client):
     page = client.get("/").get_data(as_text=True)
     assert 'id="htmx-error"' in page

@@ -91,6 +91,14 @@ def _register_error_handlers(app):
             503,
         )
 
+    # Any database failure during a request (a locked SQLite file, a missing table, a failed
+    # commit) answers 503. Flask only logs exceptions that reach the 500 handler, so log here.
+    @app.errorhandler(SQLAlchemyError)
+    def database_error(error):
+        db.session.rollback()
+        app.logger.error("Database error", exc_info=error)
+        return database_busy(error)
+
     # Flask has already logged the exception by the time this runs.
     @app.errorhandler(500)
     def server_error(_error):
