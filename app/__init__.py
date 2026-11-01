@@ -6,6 +6,7 @@ from flask import Flask, render_template
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFError, CSRFProtect
+from sqlalchemy.exc import SQLAlchemyError
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -97,7 +98,13 @@ def _register_cli(app):
         """Delete events that are 7 or more days past their date."""
         from .cleanup import delete_expired_events
 
-        count = delete_expired_events()
+        try:
+            count = delete_expired_events()
+        except SQLAlchemyError as error:
+            app.logger.exception("purge-events failed")
+            # Exit code 1 lets the scheduler mark the run as failed.
+            reason = getattr(error, "orig", None) or error
+            raise click.ClickException(f"Kunde inte ta bort gamla evenemang: {reason}")
         click.echo(f"Tog bort {count} gamla evenemang.")
 
 

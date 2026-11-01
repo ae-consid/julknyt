@@ -762,6 +762,23 @@ def test_purge_events_command_reports_the_count(client):
     assert Event.query.count() == 0
 
 
+def test_purge_events_command_fails_cleanly_when_the_commit_fails(client, monkeypatch):
+    token = make_event(client, date="2000-01-01")
+    add_dish(client, token)
+
+    def locked_commit():
+        raise OperationalError("COMMIT", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(db.session, "commit", locked_commit)
+    result = client.application.test_cli_runner().invoke(args=["purge-events"])
+    monkeypatch.undo()
+    assert result.exit_code == 1
+    assert "Kunde inte ta bort gamla evenemang: database is locked" in result.output
+    assert "Traceback" not in result.output
+    assert Event.query.count() == 1
+    assert Dish.query.count() == 1
+
+
 # --- security headers -------------------------------------------------------------------
 
 
